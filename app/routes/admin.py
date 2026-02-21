@@ -2,6 +2,8 @@ from fastapi import APIRouter, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.services.import_csv import parse_discogs_csv, get_import_stats
+from app.services.lastfm import scrape_album
+from app.models import Album
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -54,17 +56,33 @@ async def import_wishlist(request: Request, file: UploadFile = File(...)):
     content = await file.read()
     results = parse_discogs_csv(content, is_wanted=True)
     
-    message = f"Imported {results['imported']} items to wishlist"
-    if results['skipped'] > 0:
-        message += f", skipped {results['skipped']} (duplicates or missing data)"
+    return RedirectResponse(
+        url=f"/admin?message={message}", 
+        status_code=303
+    )
+
+@router.post("/admin/scrape")
+async def bulk_scrape(request: Request):
+    all_albums = list(Album.select())
     
-    if results['errors']:
-        error = f"{len(results['errors'])} errors occurred"
+    albums_to_scrape = [
+        a for a in all_albums 
+        if not a.cover_image_path or not a.year or not a.genres or a.genres == [] or a.genres == '[]'
+    ]
+    
+    if not albums_to_scrape:
         return RedirectResponse(
-            url=f"/admin?message={message}&error={error}", 
+            url="/admin?message=No+albums+need+scraping", 
             status_code=303
         )
     
+    updated_count = 0
+    for album in albums_to_scrape:
+        result = await scrape_album(album)
+        if result["updated"]:
+            updated_count += 1
+    
+    message = f"Scraped {updated_count} of {len(albums_to_scrape)} albums"
     return RedirectResponse(
         url=f"/admin?message={message}", 
         status_code=303

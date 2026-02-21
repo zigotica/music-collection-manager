@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from peewee import fn
 from app.models import Album, db
 from app.config import UPLOAD_DIR
+from app.services.lastfm import scrape_album
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -116,7 +117,7 @@ async def create_album(
     return RedirectResponse(url=f"/albums/{album.id}", status_code=303)
 
 @router.get("/albums/{album_id}", response_class=HTMLResponse)
-async def get_album(request: Request, album_id: int):
+async def get_album(request: Request, album_id: int, message: str = None):
     try:
         album = Album.get_by_id(album_id)
     except Album.DoesNotExist:
@@ -124,7 +125,8 @@ async def get_album(request: Request, album_id: int):
     
     return templates.TemplateResponse("album_detail.html", {
         "request": request,
-        "album": album
+        "album": album,
+        "message": message
     })
 
 @router.get("/albums/{album_id}/edit", response_class=HTMLResponse)
@@ -194,3 +196,22 @@ async def delete_album(album_id: int):
         raise HTTPException(status_code=404, detail="Album not found")
     
     return RedirectResponse(url="/", status_code=303)
+
+@router.post("/albums/{album_id}/scrape")
+async def scrape_single_album(album_id: int):
+    try:
+        album = Album.get_by_id(album_id)
+    except Album.DoesNotExist:
+        raise HTTPException(status_code=404, detail="Album not found")
+    
+    result = await scrape_album(album)
+    
+    if result["updated"]:
+        message = "Album updated"
+    else:
+        message = "No updates needed"
+    
+    return RedirectResponse(
+        url=f"/albums/{album_id}?message={message}", 
+        status_code=303
+    )

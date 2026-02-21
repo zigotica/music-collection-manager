@@ -4,6 +4,10 @@
 
 {% block content %}
 <div class="album-detail">
+    {% if message %}
+    <div class="alert alert-success">{{ message }}</div>
+    {% endif %}
+    
     <div class="album-detail-header">
         <div class="album-cover-large">
             {% if album.cover_image_path %}
@@ -51,6 +55,9 @@
             
             <div class="actions">
                 <a href="/albums/{{ album.id }}/edit" class="btn">Edit</a>
+                <form action="/albums/{{ album.id }}/scrape" method="post" style="display: inline;">
+                    <button type="submit" class="btn">Scrape Metadata</button>
+                </form>
                 <form action="/albums/{{ album.id }}/delete" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this album?')">
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>

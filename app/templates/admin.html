@@ -89,9 +89,9 @@
 
 <div class="admin-section">
     <h2>Metadata Scraping</h2>
-    <p class="help-text">Scrape missing metadata (cover, year, genres) from Last.fm. Coming in Phase 4.</p>
+    <p class="help-text">Scrape missing metadata (cover, year, genres) from Last.fm. Only albums with missing data will be updated.</p>
     <form action="/admin/scrape" method="post">
-        <button type="submit" class="btn" disabled>Scrape Missing Data</button>
+        <button type="submit" class="btn btn-primary">Scrape Missing Data</button>
     </form>
 </div>
 {% endblock %}
