@@ -15,6 +15,13 @@
 <div class="alert alert-error">{{ error }}</div>
 {% endif %}
 
+<div class="admin-section">
+    <h2>Quick Actions</h2>
+    <div class="quick-actions">
+        <a href="/albums/new" class="btn btn-primary">+ Add Album</a>
+    </div>
+</div>
+
 {% if import_results %}
 <div class="admin-section import-results">
     <h2>Import Results ({{ import_results.type | title }})</h2>
