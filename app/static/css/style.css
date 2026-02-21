@@ -618,3 +618,24 @@ a:hover {
         grid-template-columns: 1fr;
     }
 }
+
+.import-results {
+    background: #e8f5e9;
+    border: 1px solid #c8e6c9;
+}
+
+.import-results h2 {
+    color: #2e7d32;
+}
+
+.skipped-list {
+    margin-top: 15px;
+}
+
+.skipped-list p {
+    margin-bottom: 10px;
+}
+
+.import-results .mapping-table {
+    background: #fff;
+}

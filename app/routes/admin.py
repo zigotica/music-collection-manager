@@ -8,18 +8,27 @@ from app.models import Album
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
+_last_import_results = None
+
 @router.get("/admin", response_class=HTMLResponse)
 async def admin_page(request: Request, message: str = None, error: str = None):
+    global _last_import_results
     stats = get_import_stats()
+    import_results = _last_import_results
+    _last_import_results = None
+    
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "stats": stats,
         "message": message,
-        "error": error
+        "error": error,
+        "import_results": import_results
     })
 
 @router.post("/admin/import/collection")
 async def import_collection(request: Request, file: UploadFile = File(...)):
+    global _last_import_results
+    
     if not file.filename.endswith('.csv'):
         return RedirectResponse(
             url="/admin?error=Please+upload+a+CSV+file", 
@@ -29,24 +38,20 @@ async def import_collection(request: Request, file: UploadFile = File(...)):
     content = await file.read()
     results = parse_discogs_csv(content, is_wanted=False)
     
-    message = f"Imported {results['imported']} albums"
-    if results['skipped'] > 0:
-        message += f", skipped {results['skipped']} (duplicates or missing data)"
+    _last_import_results = {
+        'type': 'collection',
+        'imported': results['imported'],
+        'skipped_duplicates': results['skipped_duplicates'],
+        'skipped_missing': results['skipped_missing'],
+        'errors': results['errors']
+    }
     
-    if results['errors']:
-        error = f"{len(results['errors'])} errors occurred"
-        return RedirectResponse(
-            url=f"/admin?message={message}&error={error}", 
-            status_code=303
-        )
-    
-    return RedirectResponse(
-        url=f"/admin?message={message}", 
-        status_code=303
-    )
+    return RedirectResponse(url="/admin", status_code=303)
 
 @router.post("/admin/import/wishlist")
 async def import_wishlist(request: Request, file: UploadFile = File(...)):
+    global _last_import_results
+    
     if not file.filename.endswith('.csv'):
         return RedirectResponse(
             url="/admin?error=Please+upload+a+CSV+file", 
@@ -56,10 +61,15 @@ async def import_wishlist(request: Request, file: UploadFile = File(...)):
     content = await file.read()
     results = parse_discogs_csv(content, is_wanted=True)
     
-    return RedirectResponse(
-        url=f"/admin?message={message}", 
-        status_code=303
-    )
+    _last_import_results = {
+        'type': 'wishlist',
+        'imported': results['imported'],
+        'skipped_duplicates': results['skipped_duplicates'],
+        'skipped_missing': results['skipped_missing'],
+        'errors': results['errors']
+    }
+    
+    return RedirectResponse(url="/admin", status_code=303)
 
 @router.post("/admin/scrape")
 async def bulk_scrape(request: Request):

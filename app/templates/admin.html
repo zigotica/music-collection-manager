@@ -15,6 +15,76 @@
 <div class="alert alert-error">{{ error }}</div>
 {% endif %}
 
+{% if import_results %}
+<div class="admin-section import-results">
+    <h2>Import Results ({{ import_results.type | title }})</h2>
+    <p><strong>{{ import_results.imported }}</strong> albums imported</p>
+    
+    {% if import_results.skipped_duplicates %}
+    <div class="skipped-list">
+        <p><strong>{{ import_results.skipped_duplicates | length }}</strong> skipped (duplicates with same artist, title, and format):</p>
+        <table class="mapping-table">
+            <thead>
+                <tr>
+                    <th>Row</th>
+                    <th>Artist</th>
+                    <th>Title</th>
+                    <th>Format</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in import_results.skipped_duplicates %}
+                <tr>
+                    <td>{{ item.row }}</td>
+                    <td>{{ item.artist }}</td>
+                    <td>{{ item.title }}</td>
+                    <td>{{ item.format }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+    {% if import_results.skipped_missing %}
+    <div class="skipped-list">
+        <p><strong>{{ import_results.skipped_missing | length }}</strong> skipped (missing required data):</p>
+        <table class="mapping-table">
+            <thead>
+                <tr>
+                    <th>Row</th>
+                    <th>Artist</th>
+                    <th>Title</th>
+                    <th>Missing Field</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in import_results.skipped_missing %}
+                <tr>
+                    <td>{{ item.row }}</td>
+                    <td>{{ item.artist }}</td>
+                    <td>{{ item.title }}</td>
+                    <td>{{ item.missing }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+    {% if import_results.errors %}
+    <div class="alert alert-error" style="margin-top: 15px;">
+        <strong>{{ import_results.errors | length }} errors:</strong>
+        <ul>
+            {% for err in import_results.errors %}
+            <li>{{ err }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
 <div class="admin-section">
     <h2>Collection Stats</h2>
     <div class="stats-grid">

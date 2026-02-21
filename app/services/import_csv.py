@@ -28,7 +28,8 @@ def map_format(discogs_format: str) -> str:
 def parse_discogs_csv(csv_content: bytes, is_wanted: bool = False) -> dict:
     results = {
         'imported': 0,
-        'skipped': 0,
+        'skipped_duplicates': [],
+        'skipped_missing': [],
         'errors': []
     }
     
@@ -49,19 +50,38 @@ def parse_discogs_csv(csv_content: bytes, is_wanted: bool = False) -> dict:
             title = row.get('Title', '').strip()
             
             if not artist or not title:
-                results['skipped'] += 1
+                missing = []
+                if not artist:
+                    missing.append('Artist')
+                if not title:
+                    missing.append('Title')
+                results['skipped_missing'].append({
+                    'row': row_num,
+                    'artist': artist or '(empty)',
+                    'title': title or '(empty)',
+                    'missing': ', '.join(missing)
+                })
                 continue
             
             discogs_id = row.get('Release ID', '').strip() or None
             
+            discogs_format = row.get('Format', '').strip()
+            physical_format = map_format(discogs_format)
+            
             existing = Album.select().where(
                 (Album.artist == artist) & 
                 (Album.title == title) &
+                (Album.physical_format == physical_format) &
                 (Album.is_wanted == is_wanted)
             ).first()
             
             if existing:
-                results['skipped'] += 1
+                results['skipped_duplicates'].append({
+                    'row': row_num,
+                    'artist': artist,
+                    'title': title,
+                    'format': physical_format or 'Unknown'
+                })
                 continue
             
             year_str = row.get('Released', '').strip()
@@ -71,9 +91,6 @@ def parse_discogs_csv(csv_content: bytes, is_wanted: bool = False) -> dict:
                     year = int(year_str[:4])
                 except ValueError:
                     pass
-            
-            discogs_format = row.get('Format', '').strip()
-            physical_format = map_format(discogs_format)
             
             notes = row.get('Notes', '').strip() or None
             
