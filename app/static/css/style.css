@@ -425,6 +425,28 @@ a:hover {
     .navbar {
         flex-direction: column;
         text-align: center;
+        padding: 10px;
+        gap: 8px;
+    }
+    
+    .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .nav-links a {
+        font-size: 0.9rem;
+        padding: 4px 8px;
+    }
+    
+    .nav-actions {
+        width: 100%;
+    }
+    
+    .nav-actions .btn {
+        width: 100%;
+        text-align: center;
     }
     
     .toolbar {
