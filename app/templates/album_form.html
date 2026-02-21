@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit Album{% else %}Add Album{% endif %} - Music Library{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>{% if is_edit %}Edit Album{% else %}Add New Album{% endif %}</h1>
+    
+    <form action="{% if is_edit %}/albums/{{ album.id }}{% else %}/albums{% endif %}" method="post" enctype="multipart/form-data" class="album-form">
+        <div class="form-group">
+            <label for="title">Title *</label>
+            <input type="text" id="title" name="title" value="{% if album %}{{ album.title }}{% endif %}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="artist">Artist *</label>
+            <input type="text" id="artist" name="artist" value="{% if album %}{{ album.artist }}{% endif %}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="year">Year</label>
+            <input type="number" id="year" name="year" value="{% if album and album.year %}{{ album.year }}{% endif %}" min="1900" max="2100">
+        </div>
+        
+        <div class="form-group">
+            <label for="physical_format">Format</label>
+            <select id="physical_format" name="physical_format">
+                <option value="">Select format...</option>
+                <option value="Vinyl" {% if album and album.physical_format == 'Vinyl' %}selected{% endif %}>Vinyl</option>
+                <option value="EP - Single" {% if album and album.physical_format == 'EP - Single' %}selected{% endif %}>EP - Single</option>
+                <option value="CD" {% if album and album.physical_format == 'CD' %}selected{% endif %}>CD</option>
+                <option value="DVD" {% if album and album.physical_format == 'DVD' %}selected{% endif %}>DVD</option>
+                <option value="Blu-ray" {% if album and album.physical_format == 'Blu-ray' %}selected{% endif %}>Blu-ray</option>
+                <option value="Tape" {% if album and album.physical_format == 'Tape' %}selected{% endif %}>Tape</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="genres">Genres (comma-separated)</label>
+            <input type="text" id="genres" name="genres" value="{% if album and album.genres %}{{ album.genres|join(', ') }}{% endif %}" placeholder="Rock, Electronic, Jazz...">
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" rows="3">{% if album and album.notes %}{{ album.notes }}{% endif %}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="cover">Cover Image</label>
+            {% if album and album.cover_image_path %}
+            <p class="current-cover">Current: <a href="{{ album.cover_image_path }}" target="_blank">View</a></p>
+            {% endif %}
+            <input type="file" id="cover" name="cover" accept="image/*">
+        </div>
+        
+        <div class="form-group checkbox">
+            <input type="checkbox" id="is_wanted" name="is_wanted" {% if album and album.is_wanted %}checked{% endif %}>
+            <label for="is_wanted">Add to Wishlist (not in collection)</label>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{% if is_edit %}Save Changes{% else %}Add Album{% endif %}</button>
+            <a href="{% if album %}/albums/{{ album.id }}{% else %}/{% endif %}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

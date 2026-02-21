@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Wishlist - Music Library{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Wishlist</h1>
+    <span class="count">{{ albums|length }} items</span>
+</div>
+
+<div class="toolbar">
+    <form method="get" class="search-form">
+        <input type="text" name="search" value="{{ search }}" placeholder="Search by title or artist...">
+        <button type="submit">Search</button>
+        {% if search %}
+        <a href="/wanted?sort={{ sort }}&order={{ order }}" class="btn">Clear</a>
+        {% endif %}
+    </form>
+    
+    <div class="sort-controls">
+        <span>Sort by:</span>
+        <a href="/wanted?search={{ search }}&sort=title&order={% if sort == 'title' and order == 'asc' %}desc{% else %}asc{% endif %}" 
+           class="{% if sort == 'title' %}active{% endif %}">Title {% if sort == 'title' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}</a>
+        <a href="/wanted?search={{ search }}&sort=artist&order={% if sort == 'artist' and order == 'asc' %}desc{% else %}asc{% endif %}" 
+           class="{% if sort == 'artist' %}active{% endif %}">Artist {% if sort == 'artist' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}</a>
+        <a href="/wanted?search={{ search }}&sort=year&order={% if sort == 'year' and order == 'asc' %}desc{% else %}asc{% endif %}" 
+           class="{% if sort == 'year' %}active{% endif %}">Year {% if sort == 'year' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}</a>
+    </div>
+</div>
+
+{% if albums %}
+<div class="album-grid">
+    {% for album in albums %}
+    <div class="album-card">
+        <a href="/albums/{{ album.id }}" class="album-cover">
+            {% if album.cover_image_path %}
+            <img src="{{ album.cover_image_path }}" alt="{{ album.title }}">
+            {% else %}
+            <div class="no-cover">No Cover</div>
+            {% endif %}
+        </a>
+        <div class="album-info">
+            <h3><a href="/albums/{{ album.id }}">{{ album.title }}</a></h3>
+            <p class="artist"><a href="/artist/{{ album.artist }}">{{ album.artist }}</a></p>
+            <p class="meta">
+                {% if album.year %}<a href="/year/{{ album.year }}">{{ album.year }}</a>{% endif %}
+                {% if album.physical_format %}<span class="format"><a href="/format/{{ album.physical_format }}">{{ album.physical_format }}</a></span>{% endif %}
+            </p>
+            {% if album.genres %}
+            <p class="genres">
+                {% for genre in album.genres[:3] %}
+                <a href="/genre/{{ genre }}" class="tag">{{ genre }}</a>
+                {% endfor %}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>Your wishlist is empty.</p>
+    <a href="/albums/new?wanted=1" class="btn btn-primary">Add to wishlist</a>
+</div>
+{% endif %}
+{% endblock %}

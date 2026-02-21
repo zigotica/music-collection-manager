@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Music Library{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <a href="/">Music Library</a>
+        </div>
+        <div class="nav-links">
+            <a href="/" {% if request.url.path == "/" %}class="active"{% endif %}>Collection</a>
+            <a href="/wanted" {% if request.url.path == "/wanted" %}class="active"{% endif %}>Wishlist</a>
+            <a href="/stats" {% if request.url.path == "/stats" %}class="active"{% endif %}>Stats</a>
+            <a href="/admin" {% if request.url.path == "/admin" %}class="active"{% endif %}>Admin</a>
+        </div>
+        <div class="nav-actions">
+            <a href="/albums/new" class="btn btn-primary">+ Add Album</a>
+        </div>
+    </nav>
+    
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <footer class="footer">
+        <p>Music Library &copy; 2024</p>
+    </footer>
+</body>
+</html>

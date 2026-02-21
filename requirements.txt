@@ -1,0 +1,9 @@
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+peewee==3.17.0
+psycopg2-binary==2.9.9
+python-dotenv==1.0.0
+python-multipart==0.0.6
+Pillow==10.2.0
+httpx==0.26.0
+Jinja2==3.1.3

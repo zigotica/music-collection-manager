@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tag }} - Music Library{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Genre: {{ tag }}</h1>
+    <span class="count">{{ albums|length }} albums</span>
+</div>
+
+<div class="toolbar">
+    <div class="sort-controls">
+        <span>Sort by:</span>
+        <a href="/genre/{{ tag }}?sort=artist&order={% if sort == 'artist' and order == 'asc' %}desc{% else %}asc{% endif %}" 
+           class="{% if sort == 'artist' %}active{% endif %}">Artist {% if sort == 'artist' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}</a>
+        <a href="/genre/{{ tag }}?sort=title&order={% if sort == 'title' and order == 'asc' %}desc{% else %}asc{% endif %}" 
+           class="{% if sort == 'title' %}active{% endif %}">Title {% if sort == 'title' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}</a>
+        <a href="/genre/{{ tag }}?sort=year&order={% if sort == 'year' and order == 'asc' %}desc{% else %}asc{% endif %}" 
+           class="{% if sort == 'year' %}active{% endif %}">Year {% if sort == 'year' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}</a>
+    </div>
+</div>
+
+{% if albums %}
+<div class="album-grid">
+    {% for album in albums %}
+    <div class="album-card">
+        <a href="/albums/{{ album.id }}" class="album-cover">
+            {% if album.cover_image_path %}
+            <img src="{{ album.cover_image_path }}" alt="{{ album.title }}">
+            {% else %}
+            <div class="no-cover">No Cover</div>
+            {% endif %}
+        </a>
+        <div class="album-info">
+            <h3><a href="/albums/{{ album.id }}">{{ album.title }}</a></h3>
+            <p class="artist"><a href="/artist/{{ album.artist }}">{{ album.artist }}</a></p>
+            <p class="meta">
+                {% if album.year %}<a href="/year/{{ album.year }}">{{ album.year }}</a>{% endif %}
+                {% if album.physical_format %}<span class="format"><a href="/format/{{ album.physical_format }}">{{ album.physical_format }}</a></span>{% endif %}
+            </p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No albums found with this genre.</p>
+</div>
+{% endif %}
+{% endblock %}
