@@ -117,7 +117,9 @@ def get_import_stats() -> dict:
     collection_count = Album.select().where(Album.is_wanted == False).count()
     wanted_count = Album.select().where(Album.is_wanted == True).count()
     
-    missing_year = Album.select().where(Album.year.is_null()).count()
+    missing_year = Album.select().where(
+        (Album.year.is_null()) | (Album.year == 0)
+    ).count()
     
     missing_cover = Album.select().where(
         (Album.cover_image_path.is_null()) | (Album.cover_image_path == '')

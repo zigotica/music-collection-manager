@@ -8,7 +8,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 def get_decade(year):
-    if not year:
+    if year is None or year == 0:
         return "Unknown"
     return f"{(year // 10) * 10}s"
 

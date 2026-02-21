@@ -77,7 +77,9 @@ function renderDecadeChart(decades) {
                 if (elements.length > 0) {
                     const index = elements[0].index;
                     const decade = decades[index][0];
-                    if (decade !== 'Unknown') {
+                    if (decade === 'Unknown') {
+                        window.location.href = '/admin/missing-data';
+                    } else {
                         window.location.href = `/decade/${decade}`;
                     }
                 }
