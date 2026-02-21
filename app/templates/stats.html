@@ -78,8 +78,7 @@ function renderDecadeChart(decades) {
                     const index = elements[0].index;
                     const decade = decades[index][0];
                     if (decade !== 'Unknown') {
-                        const year = parseInt(decade);
-                        window.location.href = `/year/${year}`;
+                        window.location.href = `/decade/${decade}`;
                     }
                 }
             }

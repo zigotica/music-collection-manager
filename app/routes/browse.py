@@ -181,6 +181,38 @@ async def browse_year(request: Request, year: int, sort: str = "title", order: s
         "order": order
     })
 
+@router.get("/decade/{decade}", response_class=HTMLResponse)
+async def browse_decade(request: Request, decade: str, sort: str = "artist", order: str = "asc"):
+    try:
+        decade_start = int(decade.replace('s', ''))
+        decade_end = decade_start + 9
+    except ValueError:
+        decade_start = 0
+        decade_end = 0
+    
+    query = Album.select().where(
+        (Album.year >= decade_start) & (Album.year <= decade_end)
+    )
+    
+    if sort == "title":
+        query = query.order_by(Album.title.asc() if order == "asc" else Album.title.desc())
+    elif sort == "year":
+        query = query.order_by(Album.year.asc() if order == "asc" else Album.year.desc())
+    else:
+        query = query.order_by(Album.artist.asc() if order == "asc" else Album.artist.desc())
+    
+    albums = list(query)
+    
+    return templates.TemplateResponse("browse_decade.html", {
+        "request": request,
+        "albums": albums,
+        "decade": decade,
+        "decade_start": decade_start,
+        "decade_end": decade_end,
+        "sort": sort,
+        "order": order
+    })
+
 @router.get("/format/{format_name}", response_class=HTMLResponse)
 async def browse_format(request: Request, format_name: str, sort: str = "artist", order: str = "asc"):
     query = Album.select().where(Album.physical_format == format_name)
