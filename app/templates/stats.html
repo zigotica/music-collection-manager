@@ -5,10 +5,168 @@
 {% block content %}
 <div class="page-header">
     <h1>Statistics</h1>
+    <span class="count" id="total-count">Loading...</span>
 </div>
 
-<div class="empty-state">
-    <p>Stats dashboard coming in Phase 3.</p>
-    <p>Charts will show: Items by Decade, Items by Format, Top 20 Artists</p>
+<div class="stats-container">
+    <div class="chart-section">
+        <h2>Items by Decade</h2>
+        <div class="chart-wrapper">
+            <canvas id="decadeChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="charts-row">
+        <div class="chart-section half">
+            <h2>Items by Format</h2>
+            <div class="chart-wrapper">
+                <canvas id="formatChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-section half">
+            <h2>Top 20 Artists</h2>
+            <div class="chart-wrapper tall">
+                <canvas id="artistChart"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+let decadeChart, formatChart, artistChart;
+
+async function loadStats() {
+    const response = await fetch('/stats/data');
+    const data = await response.json();
+    
+    document.getElementById('total-count').textContent = data.total + ' albums';
+    
+    renderDecadeChart(data.decades);
+    renderFormatChart(data.formats);
+    renderArtistChart(data.top_artists);
+}
+
+function renderDecadeChart(decades) {
+    const ctx = document.getElementById('decadeChart').getContext('2d');
+    
+    decadeChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: decades.map(d => d[0]),
+            datasets: [{
+                label: 'Albums',
+                data: decades.map(d => d[1]),
+                backgroundColor: 'rgba(0, 102, 204, 0.7)',
+                borderColor: 'rgba(0, 102, 204, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { beginAtZero: true }
+            },
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const decade = decades[index][0];
+                    if (decade !== 'Unknown') {
+                        const year = parseInt(decade);
+                        window.location.href = `/year/${year}`;
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderFormatChart(formats) {
+    const ctx = document.getElementById('formatChart').getContext('2d');
+    
+    const colors = [
+        'rgba(0, 102, 204, 0.7)',
+        'rgba(40, 167, 69, 0.7)',
+        'rgba(255, 193, 7, 0.7)',
+        'rgba(220, 53, 69, 0.7)',
+        'rgba(111, 66, 193, 0.7)',
+        'rgba(23, 162, 184, 0.7)',
+        'rgba(102, 16, 242, 0.7)',
+        'rgba(253, 126, 20, 0.7)'
+    ];
+    
+    formatChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: formats.map(f => f[0] || 'Unknown'),
+            datasets: [{
+                data: formats.map(f => f[1]),
+                backgroundColor: colors.slice(0, formats.length)
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const format = formats[index][0];
+                    if (format && format !== 'Unknown') {
+                        window.location.href = `/format/${encodeURIComponent(format)}`;
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderArtistChart(artists) {
+    const ctx = document.getElementById('artistChart').getContext('2d');
+    
+    artistChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: artists.map(a => a[0]),
+            datasets: [{
+                label: 'Albums',
+                data: artists.map(a => a[1]),
+                backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                borderColor: 'rgba(40, 167, 69, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { beginAtZero: true }
+            },
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const artist = artists[index][0];
+                    window.location.href = `/artist/${encodeURIComponent(artist)}`;
+                }
+            }
+        }
+    });
+}
+
+loadStats();
+</script>
 {% endblock %}
