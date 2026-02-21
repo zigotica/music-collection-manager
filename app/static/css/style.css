@@ -639,3 +639,39 @@ a:hover {
 .import-results .mapping-table {
     background: #fff;
 }
+
+.thumbnail {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.no-cover-small {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e0e0e0;
+    color: #999;
+    font-size: 0.8rem;
+}
+
+.tag-missing {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.tag-wanted {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.tag-collection {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.btn-small {
+    padding: 4px 8px;
+    font-size: 12px;
+}

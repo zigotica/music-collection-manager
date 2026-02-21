@@ -97,3 +97,28 @@ async def bulk_scrape(request: Request):
         url=f"/admin?message={message}", 
         status_code=303
     )
+
+@router.get("/admin/missing-data", response_class=HTMLResponse)
+async def missing_data_page(request: Request):
+    all_albums = list(Album.select())
+    
+    albums_with_missing = []
+    for album in all_albums:
+        missing = []
+        if not album.year:
+            missing.append('Year')
+        if not album.cover_image_path:
+            missing.append('Cover')
+        if not album.genres or album.genres == [] or album.genres == '[]':
+            missing.append('Genres')
+        
+        if missing:
+            albums_with_missing.append({
+                'album': album,
+                'missing': missing
+            })
+    
+    return templates.TemplateResponse("missing_data.html", {
+        "request": request,
+        "albums_with_missing": albums_with_missing
+    })

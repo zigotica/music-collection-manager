@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Missing Data - Music Library{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Albums with Missing Data</h1>
+    <span class="count">{{ albums_with_missing | length }} items</span>
+</div>
+
+<div class="toolbar">
+    <a href="/admin" class="btn">← Back to Admin</a>
+</div>
+
+{% if albums_with_missing %}
+<div class="admin-section">
+    <table class="mapping-table">
+        <thead>
+            <tr>
+                <th>Cover</th>
+                <th>Artist</th>
+                <th>Title</th>
+                <th>Format</th>
+                <th>Year</th>
+                <th>Status</th>
+                <th>Missing</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in albums_with_missing %}
+            {% set album = item.album %}
+            <tr>
+                <td>
+                    {% if album.cover_image_path %}
+                    <img src="{{ album.cover_image_path }}" alt="{{ album.title }}" class="thumbnail">
+                    {% else %}
+                    <div class="thumbnail no-cover-small">-</div>
+                    {% endif %}
+                </td>
+                <td><a href="/artist/{{ album.artist }}">{{ album.artist }}</a></td>
+                <td><a href="/albums/{{ album.id }}">{{ album.title }}</a></td>
+                <td>{% if album.physical_format %}<a href="/format/{{ album.physical_format }}">{{ album.physical_format }}</a>{% else %}-{% endif %}</td>
+                <td>{% if album.year %}<a href="/year/{{ album.year }}">{{ album.year }}</a>{% else %}-{% endif %}</td>
+                <td>{% if album.is_wanted %}<span class="tag tag-wanted">Wishlist</span>{% else %}<span class="tag tag-collection">Collection</span>{% endif %}</td>
+                <td>
+                    {% for field in item.missing %}
+                    <span class="tag tag-missing">{{ field }}</span>
+                    {% endfor %}
+                </td>
+                <td>
+                    <a href="/albums/{{ album.id }}/edit" class="btn btn-small">Edit</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No albums with missing data. All set!</p>
+    <a href="/admin" class="btn">Back to Admin</a>
+</div>
+{% endif %}
+{% endblock %}
