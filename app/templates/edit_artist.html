@@ -4,21 +4,45 @@
 
 {% block content %}
 <div class="form-container">
-    <h1>Edit Artist Name</h1>
+    <h1>Edit Artist</h1>
     
     <div class="edit-artist-info">
-        <p>Renaming: <strong>{{ artist_name }}</strong></p>
-        <p>This will update <strong>{{ album_count }}</strong> album(s)</p>
+        <p>Artist: <strong>{{ artist_name }}</strong></p>
+        <p><strong>{{ album_count }}</strong> album(s) in collection</p>
+        
+        {% if artist and artist.image_url %}
+        <div class="current-artist-image">
+            <img src="{{ artist.image_url }}" alt="{{ artist_name }}">
+        </div>
+        {% endif %}
     </div>
     
-    <form action="/artist/{{ artist_name | urlencode }}/edit" method="post" class="album-form">
+    <form action="/artist/{{ artist_name | urlencode }}/edit" method="post" enctype="multipart/form-data" class="album-form">
         <div class="form-group">
-            <label for="new_name">New Artist Name</label>
+            <label for="new_name">Artist Name</label>
             <input type="text" id="new_name" name="new_name" value="{{ artist_name }}" required>
         </div>
         
+        <div class="form-group">
+            <label for="image">Artist Image</label>
+            {% if artist and artist.image_url %}
+            <p class="current-cover">Current image shown above. Upload new image to replace.</p>
+            {% endif %}
+            <input type="file" id="image" name="image" accept="image/*">
+        </div>
+        
+        <div class="form-group">
+            <label for="bio">Bio</label>
+            <textarea id="bio" name="bio" rows="4" placeholder="Artist biography...">{% if artist and artist.bio %}{{ artist.bio }}{% endif %}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="genres">Genre Tags (comma-separated)</label>
+            <input type="text" id="genres" name="genres" value="{% if artist and artist.genres %}{{ artist.genres | join(', ') }}{% endif %}" placeholder="Rock, Alternative, Electronic...">
+        </div>
+        
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Update All Albums</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
             <a href="/artist/{{ artist_name | urlencode }}" class="btn">Cancel</a>
         </div>
     </form>

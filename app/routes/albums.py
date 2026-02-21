@@ -7,6 +7,7 @@ from peewee import fn
 from app.models import Album, db
 from app.config import UPLOAD_DIR
 from app.services.lastfm import scrape_album
+from app.services.image_utils import resize_image
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -92,13 +93,13 @@ async def create_album(
     cover_path = None
     if cover and cover.filename:
         if allowed_file(cover.filename):
-            ext = cover.filename.rsplit('.', 1)[1].lower()
+            content = await cover.read()
+            resized_content, ext = resize_image(content)
             filename = f"{artist}_{title}.{ext}".replace(" ", "_").replace("/", "_")
             filepath = os.path.join(UPLOAD_DIR, filename)
             os.makedirs(UPLOAD_DIR, exist_ok=True)
             with open(filepath, "wb") as f:
-                content = await cover.read()
-                f.write(content)
+                f.write(resized_content)
             cover_path = f"/static/uploads/{filename}"
     
     genre_list = [g.strip() for g in genres.split(",") if g.strip()] if genres else []
@@ -161,13 +162,13 @@ async def update_album(
     
     if cover and cover.filename:
         if allowed_file(cover.filename):
-            ext = cover.filename.rsplit('.', 1)[1].lower()
+            content = await cover.read()
+            resized_content, ext = resize_image(content)
             filename = f"{artist}_{title}_{album_id}.{ext}".replace(" ", "_").replace("/", "_")
             filepath = os.path.join(UPLOAD_DIR, filename)
             os.makedirs(UPLOAD_DIR, exist_ok=True)
             with open(filepath, "wb") as f:
-                content = await cover.read()
-                f.write(content)
+                f.write(resized_content)
             album.cover_image_path = f"/static/uploads/{filename}"
     
     genre_list = [g.strip() for g in genres.split(",") if g.strip()] if genres else []

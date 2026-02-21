@@ -45,9 +45,26 @@ class Album(Model):
         self.updated_at = datetime.now()
         return super().save(*args, **kwargs)
 
+class Artist(Model):
+    name = CharField(unique=True)
+    image_url = CharField(null=True)
+    bio = TextField(null=True)
+    genres = JSONField(null=True, default=list)
+    lastfm_url = CharField(null=True)
+    created_at = DateTimeField(default=datetime.now)
+    updated_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        database = db
+        table_name = 'artists'
+
+    def save(self, *args, **kwargs):
+        self.updated_at = datetime.now()
+        return super().save(*args, **kwargs)
+
 def create_tables():
     db.connect()
-    db.create_tables([Album], safe=True)
+    db.create_tables([Album, Artist], safe=True)
     db.close()
 
 def close_db(e):

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Artists - Music Library{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Artists</h1>
+    <span class="count">{{ artists|length }} artists</span>
+</div>
+
+<div class="toolbar">
+    <div class="sort-controls">
+        <span>Sort by:</span>
+        <a href="/artists?sort=name&order={% if sort == 'name' and order == 'asc' %}desc{% else %}asc{% endif %}" 
+           class="{% if sort == 'name' %}active{% endif %}">Name {% if sort == 'name' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}</a>
+        <a href="/artists?sort=albums&order={% if sort == 'albums' and order == 'desc' %}asc{% else %}desc{% endif %}" 
+           class="{% if sort == 'albums' %}active{% endif %}">Albums {% if sort == 'albums' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}</a>
+    </div>
+</div>
+
+{% if artists %}
+<div class="artist-grid">
+    {% for artist in artists %}
+    <div class="artist-card">
+        <a href="/artist/{{ artist.name | urlencode }}" class="artist-card-image">
+            {% if artist.image_url %}
+            <img src="{{ artist.image_url }}" alt="{{ artist.name }}">
+            {% else %}
+            <div class="artist-image-placeholder"><span>{{ artist.name[0] }}</span></div>
+            {% endif %}
+        </a>
+        <div class="artist-card-info">
+            <h3><a href="/artist/{{ artist.name | urlencode }}">{{ artist.name }}</a></h3>
+            <p class="album-count">{{ artist.album_count }} album{{ 's' if artist.album_count != 1 else '' }}</p>
+            {% if artist.genres %}
+            <p class="genres">
+                {% for genre in artist.genres[:3] %}
+                <a href="/genre/{{ genre }}" class="tag">{{ genre }}</a>
+                {% endfor %}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No artists in your collection yet.</p>
+    <a href="/albums/new" class="btn btn-primary">Add your first album</a>
+</div>
+{% endif %}
+{% endblock %}

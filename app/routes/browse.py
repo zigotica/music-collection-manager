@@ -1,25 +1,74 @@
-from fastapi import APIRouter, Request, Form
+from fastapi import APIRouter, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from peewee import fn
 from urllib.parse import quote
-from app.models import Album
+import os
+from app.models import Album, Artist
+from app.services.lastfm import scrape_artist, get_or_create_artist
+from app.services.image_utils import resize_image
+from app.config import UPLOAD_DIR
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
+@router.get("/artists", response_class=HTMLResponse)
+async def browse_artists(request: Request, sort: str = "name", order: str = "asc"):
+    artists_data = Album.select(
+        Album.artist,
+        fn.COUNT(Album.id).alias('album_count')
+    ).where(
+        Album.is_wanted == False
+    ).group_by(
+        Album.artist
+    ).dicts()
+    
+    artists_list = []
+    for a in artists_data:
+        artist_name = a['artist']
+        album_count = a['album_count']
+        
+        artist = Artist.select().where(Artist.name == artist_name).first()
+        
+        artists_list.append({
+            'name': artist_name,
+            'album_count': album_count,
+            'image_url': artist.image_url if artist else None,
+            'genres': artist.genres if artist else []
+        })
+    
+    if sort == "albums":
+        artists_list.sort(key=lambda x: x['album_count'], reverse=(order == "desc"))
+    else:
+        artists_list.sort(key=lambda x: x['name'].lower(), reverse=(order == "desc"))
+    
+    return templates.TemplateResponse("artists.html", {
+        "request": request,
+        "artists": artists_list,
+        "sort": sort,
+        "order": order
+    })
+
 @router.get("/artist/{artist_name:path}/edit", response_class=HTMLResponse)
 async def edit_artist_form(request: Request, artist_name: str):
     count = Album.select().where(Album.artist == artist_name).count()
+    artist = Artist.select().where(Artist.name == artist_name).first()
     
     return templates.TemplateResponse("edit_artist.html", {
         "request": request,
         "artist_name": artist_name,
-        "album_count": count
+        "album_count": count,
+        "artist": artist
     })
 
 @router.post("/artist/{artist_name:path}/edit")
-async def update_artist_name(artist_name: str, new_name: str = Form(...)):
+async def update_artist_name(
+    artist_name: str,
+    new_name: str = Form(...),
+    bio: str = Form(None),
+    genres: str = Form(None),
+    image: UploadFile = File(None)
+):
     if not new_name or not new_name.strip():
         return RedirectResponse(
             url=f"/artist/{quote(artist_name)}/edit?error=Name+cannot+be+empty",
@@ -30,8 +79,58 @@ async def update_artist_name(artist_name: str, new_name: str = Form(...)):
     
     updated = Album.update(artist=new_name).where(Album.artist == artist_name).execute()
     
+    artist_record = Artist.select().where(Artist.name == artist_name).first()
+    
+    if image and image.filename:
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        ext = image.filename.rsplit('.', 1)[-1].lower() if '.' in image.filename else 'jpg'
+        if ext in allowed_extensions:
+            os.makedirs(UPLOAD_DIR, exist_ok=True)
+            content = await image.read()
+            resized_content, ext = resize_image(content)
+            filename = f"artist_{new_name.replace(' ', '_').replace('/', '_')}.{ext}"
+            filepath = os.path.join(UPLOAD_DIR, filename)
+            with open(filepath, "wb") as f:
+                f.write(resized_content)
+            
+            if not artist_record:
+                artist_record = Artist.create(
+                    name=new_name,
+                    image_url=f"/static/uploads/{filename}"
+                )
+            else:
+                artist_record.image_url = f"/static/uploads/{filename}"
+    
+    genre_list = [g.strip() for g in genres.split(",") if g.strip()] if genres else []
+    
+    if not artist_record:
+        artist_record = Artist.create(
+            name=new_name,
+            bio=bio.strip() if bio else None,
+            genres=genre_list
+        )
+    else:
+        artist_record.name = new_name
+        artist_record.bio = bio.strip() if bio else None
+        artist_record.genres = genre_list
+        artist_record.save()
+    
     return RedirectResponse(
-        url=f"/artist/{quote(new_name)}?message=Updated+{updated}+albums",
+        url=f"/artist/{quote(new_name)}?message=Artist+updated",
+        status_code=303
+    )
+
+@router.post("/artist/{artist_name:path}/scrape")
+async def scrape_artist_profile(artist_name: str):
+    result = await scrape_artist(artist_name)
+    
+    if result["updated"]:
+        message = "Artist profile updated"
+    else:
+        message = "No updates available"
+    
+    return RedirectResponse(
+        url=f"/artist/{quote(artist_name)}?message={message}",
         status_code=303
     )
 
@@ -46,10 +145,18 @@ async def browse_artist(request: Request, artist_name: str, sort: str = "year", 
     
     albums = list(query)
     
+    artist = Artist.select().where(Artist.name == artist_name).first()
+    
+    if not artist:
+        result = await scrape_artist(artist_name)
+        if result["created"]:
+            artist = Artist.select().where(Artist.name == artist_name).first()
+    
     return templates.TemplateResponse("browse_artist.html", {
         "request": request,
         "albums": albums,
         "artist_name": artist_name,
+        "artist": artist,
         "sort": sort,
         "order": order,
         "message": message

@@ -1,9 +1,98 @@
 import os
+import html
 import httpx
+import logging
+import re
+from urllib.parse import quote
 from typing import Optional, List
 from app.config import LASTFM_API_KEY, UPLOAD_DIR
+from app.models import Artist
 
+logger = logging.getLogger(__name__)
 LASTFM_API_BASE = "https://ws.audioscrobbler.com/2.0/"
+
+
+async def get_artist_image_from_html(artist_name: str) -> Optional[str]:
+    """Scrape artist image from Last.fm HTML page"""
+    try:
+        encoded_name = quote(artist_name, safe='')
+        url = f"https://www.last.fm/music/{encoded_name}"
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url, follow_redirects=True)
+            response.raise_for_status()
+            
+            # Look for header-new-background-image with background-image style
+            match = re.search(r'header-new-background-image[^>]*style="background-image:\s*url\(([^)]+)\)', response.text)
+            if match:
+                image_url = match.group(1).strip('"\'')
+                logger.info(f"Found artist image from HTML for {artist_name}: {image_url}")
+                return image_url
+            
+            # Also try the content attribute on the same element
+            match = re.search(r'header-new-background-image[^>]*content="([^"]+)"', response.text)
+            if match:
+                image_url = match.group(1)
+                logger.info(f"Found artist image from content attr for {artist_name}: {image_url}")
+                return image_url
+            
+            logger.info(f"No artist image found in HTML for {artist_name}")
+            return None
+    except Exception as e:
+        logger.error(f"Error scraping artist HTML for {artist_name}: {e}")
+        return None
+
+
+async def get_artist_info(artist_name: str) -> dict:
+    if not LASTFM_API_KEY:
+        logger.warning("LASTFM_API_KEY not configured")
+        return {}
+    
+    params = {
+        "method": "artist.getinfo",
+        "artist": artist_name,
+        "api_key": LASTFM_API_KEY,
+        "format": "json"
+    }
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(LASTFM_API_BASE, params=params)
+            response.raise_for_status()
+            data = response.json()
+            
+            if "artist" not in data:
+                logger.warning(f"No artist data for: {artist_name}")
+                return {}
+            
+            result = {}
+            artist_data = data["artist"]
+            
+            # Try scraping image from HTML instead of API
+            image_url = await get_artist_image_from_html(artist_name)
+            if image_url:
+                result["image_url"] = image_url
+            
+            if "bio" in artist_data and "summary" in artist_data["bio"]:
+                bio = artist_data["bio"]["summary"]
+                bio = html.unescape(bio)
+                if "<a" in bio:
+                    bio = bio.split("<a")[0].strip()
+                if bio:
+                    result["bio"] = bio
+            
+            if "tags" in artist_data and "tag" in artist_data["tags"]:
+                tags = artist_data["tags"]["tag"]
+                if not isinstance(tags, list):
+                    tags = [tags] if tags else []
+                result["genres"] = [tag["name"] for tag in tags[:5] if isinstance(tag, dict) and "name" in tag]
+            
+            if "url" in artist_data:
+                result["lastfm_url"] = artist_data["url"]
+            
+            return result
+    except Exception as e:
+        logger.error(f"Error fetching artist info for {artist_name}: {e}")
+        return {}
 
 
 async def get_artist_top_tags(artist: str) -> List[str]:
@@ -144,3 +233,63 @@ async def scrape_album(album) -> dict:
         album.save()
     
     return result
+
+
+async def scrape_artist(artist_name: str) -> dict:
+    result = {
+        "updated": False,
+        "created": False,
+        "image_updated": False,
+        "bio_updated": False,
+        "genres_updated": False
+    }
+    
+    if not LASTFM_API_KEY:
+        return result
+    
+    artist_info = await get_artist_info(artist_name)
+    
+    if not artist_info:
+        return result
+    
+    artist = Artist.select().where(Artist.name == artist_name).first()
+    
+    if not artist:
+        artist = Artist.create(
+            name=artist_name,
+            image_url=artist_info.get("image_url"),
+            bio=artist_info.get("bio"),
+            genres=artist_info.get("genres", []),
+            lastfm_url=artist_info.get("lastfm_url")
+        )
+        result["created"] = True
+        result["updated"] = True
+        return result
+    
+    if artist_info.get("image_url") and artist_info["image_url"] != artist.image_url:
+        artist.image_url = artist_info["image_url"]
+        result["image_updated"] = True
+        result["updated"] = True
+    
+    if artist_info.get("bio") and artist_info["bio"] != artist.bio:
+        artist.bio = artist_info["bio"]
+        result["bio_updated"] = True
+        result["updated"] = True
+    
+    if artist_info.get("genres") and artist_info["genres"] != artist.genres:
+        artist.genres = artist_info["genres"]
+        result["genres_updated"] = True
+        result["updated"] = True
+    
+    if artist_info.get("lastfm_url") and artist_info["lastfm_url"] != artist.lastfm_url:
+        artist.lastfm_url = artist_info["lastfm_url"]
+    
+    if result["updated"]:
+        artist.save()
+    
+    return result
+
+
+def get_or_create_artist(artist_name: str):
+    artist = Artist.select().where(Artist.name == artist_name).first()
+    return artist

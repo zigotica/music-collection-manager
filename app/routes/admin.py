@@ -2,8 +2,8 @@ from fastapi import APIRouter, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.services.import_csv import parse_discogs_csv, get_import_stats
-from app.services.lastfm import scrape_album
-from app.models import Album
+from app.services.lastfm import scrape_album, scrape_artist as scrape_artist_profile
+from app.models import Album, Artist
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -122,3 +122,20 @@ async def missing_data_page(request: Request):
         "request": request,
         "albums_with_missing": albums_with_missing
     })
+
+@router.post("/admin/scrape-artists")
+async def bulk_scrape_artists(request: Request):
+    artist_names = list(Album.select(Album.artist).distinct())
+    
+    updated_count = 0
+    for name_tuple in artist_names:
+        artist_name = name_tuple.artist
+        result = await scrape_artist_profile(artist_name)
+        if result["updated"]:
+            updated_count += 1
+    
+    message = f"Scraped {updated_count} artist profiles"
+    return RedirectResponse(
+        url=f"/admin?message={message}", 
+        status_code=303
+    )

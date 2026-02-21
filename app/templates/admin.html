@@ -162,9 +162,18 @@
 
 <div class="admin-section">
     <h2>Metadata Scraping</h2>
-    <p class="help-text">Scrape missing metadata (cover, year, genres) from Last.fm. Only albums with missing data will be updated.</p>
-    <form action="/admin/scrape" method="post">
-        <button type="submit" class="btn btn-primary">Scrape Missing Data</button>
-    </form>
+    <p class="help-text">Scrape missing metadata from Last.fm.</p>
+    <div class="scrape-buttons">
+        <form action="/admin/scrape" method="post" style="display: inline;">
+            <button type="submit" class="btn btn-primary">Scrape Album Data</button>
+        </form>
+        <form action="/admin/scrape-artists" method="post" style="display: inline;">
+            <button type="submit" class="btn btn-primary">Scrape Artist Profiles</button>
+        </form>
+    </div>
+    <p class="help-text" style="margin-top: 10px;">
+        <strong>Album Data:</strong> Cover images, year, genre tags for albums missing data.<br>
+        <strong>Artist Profiles:</strong> Images, bios, genre tags for all artists.
+    </p>
 </div>
 {% endblock %}
