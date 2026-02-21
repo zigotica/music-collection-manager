@@ -675,3 +675,14 @@ a:hover {
     padding: 4px 8px;
     font-size: 12px;
 }
+
+.edit-artist-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.edit-artist-info p {
+    margin: 5px 0;
+}

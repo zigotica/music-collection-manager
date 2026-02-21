@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Artist - Music Library{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>Edit Artist Name</h1>
+    
+    <div class="edit-artist-info">
+        <p>Renaming: <strong>{{ artist_name }}</strong></p>
+        <p>This will update <strong>{{ album_count }}</strong> album(s)</p>
+    </div>
+    
+    <form action="/artist/{{ artist_name | urlencode }}/edit" method="post" class="album-form">
+        <div class="form-group">
+            <label for="new_name">New Artist Name</label>
+            <input type="text" id="new_name" name="new_name" value="{{ artist_name }}" required>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Update All Albums</button>
+            <a href="/artist/{{ artist_name | urlencode }}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

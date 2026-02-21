@@ -1,14 +1,42 @@
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from peewee import fn
+from urllib.parse import quote
 from app.models import Album
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
-@router.get("/artist/{artist_name}", response_class=HTMLResponse)
-async def browse_artist(request: Request, artist_name: str, sort: str = "year", order: str = "asc"):
+@router.get("/artist/{artist_name:path}/edit", response_class=HTMLResponse)
+async def edit_artist_form(request: Request, artist_name: str):
+    count = Album.select().where(Album.artist == artist_name).count()
+    
+    return templates.TemplateResponse("edit_artist.html", {
+        "request": request,
+        "artist_name": artist_name,
+        "album_count": count
+    })
+
+@router.post("/artist/{artist_name:path}/edit")
+async def update_artist_name(artist_name: str, new_name: str = Form(...)):
+    if not new_name or not new_name.strip():
+        return RedirectResponse(
+            url=f"/artist/{quote(artist_name)}/edit?error=Name+cannot+be+empty",
+            status_code=303
+        )
+    
+    new_name = new_name.strip()
+    
+    updated = Album.update(artist=new_name).where(Album.artist == artist_name).execute()
+    
+    return RedirectResponse(
+        url=f"/artist/{quote(new_name)}?message=Updated+{updated}+albums",
+        status_code=303
+    )
+
+@router.get("/artist/{artist_name:path}", response_class=HTMLResponse)
+async def browse_artist(request: Request, artist_name: str, sort: str = "year", order: str = "asc", message: str = None):
     query = Album.select().where(Album.artist == artist_name)
     
     if sort == "title":
@@ -23,7 +51,8 @@ async def browse_artist(request: Request, artist_name: str, sort: str = "year", 
         "albums": albums,
         "artist_name": artist_name,
         "sort": sort,
-        "order": order
+        "order": order,
+        "message": message
     })
 
 @router.get("/year/{year}", response_class=HTMLResponse)
