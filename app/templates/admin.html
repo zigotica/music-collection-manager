@@ -7,8 +7,91 @@
     <h1>Admin</h1>
 </div>
 
-<div class="empty-state">
-    <p>Admin tools coming in Phase 4.</p>
-    <p>Features will include: CSV import, Metadata scraping</p>
+{% if message %}
+<div class="alert alert-success">{{ message }}</div>
+{% endif %}
+
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
+<div class="admin-section">
+    <h2>Collection Stats</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-value">{{ stats.collection_count }}</span>
+            <span class="stat-label">In Collection</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">{{ stats.wanted_count }}</span>
+            <span class="stat-label">In Wishlist</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">{{ stats.missing_year }}</span>
+            <span class="stat-label">Missing Year</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">{{ stats.missing_cover }}</span>
+            <span class="stat-label">Missing Cover</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">{{ stats.missing_genres }}</span>
+            <span class="stat-label">Missing Genres</span>
+        </div>
+    </div>
+</div>
+
+<div class="admin-section">
+    <h2>Import from Discogs CSV</h2>
+    <p class="help-text">Export your collection or wishlist from Discogs as CSV, then upload here.</p>
+    
+    <div class="import-grid">
+        <div class="import-card">
+            <h3>Collection</h3>
+            <p>Import your Discogs collection</p>
+            <form action="/admin/import/collection" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" accept=".csv" required>
+                <button type="submit" class="btn btn-primary">Upload Collection CSV</button>
+            </form>
+        </div>
+        
+        <div class="import-card">
+            <h3>Wishlist</h3>
+            <p>Import your Discogs wishlist</p>
+            <form action="/admin/import/wishlist" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" accept=".csv" required>
+                <button type="submit" class="btn btn-primary">Upload Wishlist CSV</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="admin-section">
+    <h2>Format Mapping</h2>
+    <p class="help-text">Discogs formats are automatically mapped to your custom format:</p>
+    <table class="mapping-table">
+        <thead>
+            <tr>
+                <th>Discogs Format Contains</th>
+                <th>Mapped To</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>7", EP, Maxi, Single</td><td>EP - Single</td></tr>
+            <tr><td>12", LP</td><td>Vinyl</td></tr>
+            <tr><td>CD</td><td>CD</td></tr>
+            <tr><td>DVD</td><td>DVD</td></tr>
+            <tr><td>Ray</td><td>Blu-ray</td></tr>
+            <tr><td>Cass</td><td>Tape</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="admin-section">
+    <h2>Metadata Scraping</h2>
+    <p class="help-text">Scrape missing metadata (cover, year, genres) from Last.fm. Coming in Phase 4.</p>
+    <form action="/admin/scrape" method="post">
+        <button type="submit" class="btn" disabled>Scrape Missing Data</button>
+    </form>
 </div>
 {% endblock %}
