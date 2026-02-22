@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Request, UploadFile, File, Form
+from fastapi import APIRouter, Request, UploadFile, File, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.services.import_csv import parse_discogs_csv, get_import_stats
 from app.services.lastfm import scrape_album, scrape_artist as scrape_artist_profile
 from app.models import Album, Artist
+from app.auth import require_admin
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -11,7 +12,7 @@ templates = Jinja2Templates(directory="app/templates")
 _last_import_results = None
 
 @router.get("/admin", response_class=HTMLResponse)
-async def admin_page(request: Request, message: str = None, error: str = None):
+async def admin_page(request: Request, message: str = None, error: str = None, _: bool = Depends(require_admin)):
     global _last_import_results
     stats = get_import_stats()
     import_results = _last_import_results
@@ -26,7 +27,7 @@ async def admin_page(request: Request, message: str = None, error: str = None):
     })
 
 @router.post("/admin/import/collection")
-async def import_collection(request: Request, file: UploadFile = File(...)):
+async def import_collection(request: Request, file: UploadFile = File(...), _: bool = Depends(require_admin)):
     global _last_import_results
     
     if not file.filename.endswith('.csv'):
@@ -49,7 +50,7 @@ async def import_collection(request: Request, file: UploadFile = File(...)):
     return RedirectResponse(url="/admin", status_code=303)
 
 @router.post("/admin/import/wishlist")
-async def import_wishlist(request: Request, file: UploadFile = File(...)):
+async def import_wishlist(request: Request, file: UploadFile = File(...), _: bool = Depends(require_admin)):
     global _last_import_results
     
     if not file.filename.endswith('.csv'):
@@ -72,7 +73,7 @@ async def import_wishlist(request: Request, file: UploadFile = File(...)):
     return RedirectResponse(url="/admin", status_code=303)
 
 @router.post("/admin/scrape")
-async def bulk_scrape(request: Request):
+async def bulk_scrape(request: Request, _: bool = Depends(require_admin)):
     all_albums = list(Album.select())
     
     albums_to_scrape = [
@@ -99,7 +100,7 @@ async def bulk_scrape(request: Request):
     )
 
 @router.get("/admin/missing-data", response_class=HTMLResponse)
-async def missing_data_page(request: Request):
+async def missing_data_page(request: Request, _: bool = Depends(require_admin)):
     all_albums = list(Album.select())
     
     albums_with_missing = []
@@ -124,7 +125,7 @@ async def missing_data_page(request: Request):
     })
 
 @router.post("/admin/scrape-artists")
-async def bulk_scrape_artists(request: Request):
+async def bulk_scrape_artists(request: Request, _: bool = Depends(require_admin)):
     artist_names = list(Album.select(Album.artist).distinct())
     
     updated_count = 0

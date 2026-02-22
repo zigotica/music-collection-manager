@@ -153,6 +153,21 @@ a:hover {
     text-decoration: none;
 }
 
+.nav-auth {
+    margin-left: auto;
+}
+
+.nav-auth a {
+    color: #888;
+    padding: 5px 10px;
+    font-size: 1.2rem;
+}
+
+.nav-auth a:hover {
+    color: #ccc;
+    text-decoration: none;
+}
+
 .btn {
     display: inline-block;
     padding: 8px 16px;
@@ -964,4 +979,37 @@ a:hover {
     font-size: 0.85rem;
     color: #666;
     margin-bottom: 5px;
+}
+
+.login-container {
+    max-width: 400px;
+    margin: 60px auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.login-container h1 {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.login-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.login-container .btn {
+    width: 100%;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    text-align: center;
 }

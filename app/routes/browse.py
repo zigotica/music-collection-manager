@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Form, UploadFile, File
+from fastapi import APIRouter, Request, Form, UploadFile, File, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from peewee import fn
@@ -8,6 +8,7 @@ from app.models import Album, Artist
 from app.services.lastfm import scrape_artist, get_or_create_artist
 from app.services.image_utils import resize_image
 from app.config import UPLOAD_DIR
+from app.auth import require_admin
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -50,7 +51,7 @@ async def browse_artists(request: Request, sort: str = "name", order: str = "asc
     })
 
 @router.get("/artist/{artist_name:path}/edit", response_class=HTMLResponse)
-async def edit_artist_form(request: Request, artist_name: str):
+async def edit_artist_form(request: Request, artist_name: str, _: bool = Depends(require_admin)):
     count = Album.select().where(Album.artist == artist_name).count()
     artist = Artist.select().where(Artist.name == artist_name).first()
     
@@ -67,7 +68,8 @@ async def update_artist_name(
     new_name: str = Form(...),
     bio: str = Form(None),
     genres: str = Form(None),
-    image: UploadFile = File(None)
+    image: UploadFile = File(None),
+    _: bool = Depends(require_admin)
 ):
     if not new_name or not new_name.strip():
         return RedirectResponse(
@@ -121,7 +123,7 @@ async def update_artist_name(
     )
 
 @router.post("/artist/{artist_name:path}/scrape")
-async def scrape_artist_profile(artist_name: str):
+async def scrape_artist_profile(artist_name: str, _: bool = Depends(require_admin)):
     result = await scrape_artist(artist_name)
     
     if result["updated"]:

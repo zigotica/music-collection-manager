@@ -1,6 +1,6 @@
 import os
 import json
-from fastapi import APIRouter, Request, Form, UploadFile, File, HTTPException
+from fastapi import APIRouter, Request, Form, UploadFile, File, HTTPException, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from peewee import fn
@@ -8,6 +8,7 @@ from app.models import Album, db
 from app.config import UPLOAD_DIR
 from app.services.lastfm import scrape_album
 from app.services.image_utils import resize_image
+from app.auth import require_admin
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -72,7 +73,7 @@ async def wanted(request: Request, search: str = "", sort: str = "title", order:
     })
 
 @router.get("/albums/new", response_class=HTMLResponse)
-async def new_album_form(request: Request):
+async def new_album_form(request: Request, _: bool = Depends(require_admin)):
     return templates.TemplateResponse("album_form.html", {
         "request": request,
         "album": None,
@@ -88,7 +89,8 @@ async def create_album(
     genres: str = Form(""),
     notes: str = Form(None),
     is_wanted: bool = Form(False),
-    cover: UploadFile = File(None)
+    cover: UploadFile = File(None),
+    _: bool = Depends(require_admin)
 ):
     cover_path = None
     if cover and cover.filename:
@@ -131,7 +133,7 @@ async def get_album(request: Request, album_id: int, message: str = None):
     })
 
 @router.get("/albums/{album_id}/edit", response_class=HTMLResponse)
-async def edit_album_form(request: Request, album_id: int):
+async def edit_album_form(request: Request, album_id: int, _: bool = Depends(require_admin)):
     try:
         album = Album.get_by_id(album_id)
     except Album.DoesNotExist:
@@ -153,7 +155,8 @@ async def update_album(
     genres: str = Form(""),
     notes: str = Form(None),
     is_wanted: bool = Form(False),
-    cover: UploadFile = File(None)
+    cover: UploadFile = File(None),
+    _: bool = Depends(require_admin)
 ):
     try:
         album = Album.get_by_id(album_id)
@@ -185,7 +188,7 @@ async def update_album(
     return RedirectResponse(url=f"/albums/{album.id}", status_code=303)
 
 @router.post("/albums/{album_id}/delete")
-async def delete_album(album_id: int):
+async def delete_album(album_id: int, _: bool = Depends(require_admin)):
     try:
         album = Album.get_by_id(album_id)
         if album.cover_image_path:
@@ -199,7 +202,7 @@ async def delete_album(album_id: int):
     return RedirectResponse(url="/", status_code=303)
 
 @router.post("/albums/{album_id}/scrape")
-async def scrape_single_album(album_id: int):
+async def scrape_single_album(album_id: int, _: bool = Depends(require_admin)):
     try:
         album = Album.get_by_id(album_id)
     except Album.DoesNotExist:
