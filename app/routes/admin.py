@@ -268,7 +268,7 @@ async def backup_database(_: bool = Depends(require_admin)):
     env["PGPASSWORD"] = DB_PASSWORD
     
     process = subprocess.Popen(
-        ["pg_dump", "-U", DB_USER, "-h", DB_HOST, "-p", str(DB_PORT), "--no-owner", "--no-acl", DB_NAME],
+        ["pg_dump", "-U", DB_USER, "-h", DB_HOST, "-p", str(DB_PORT), "--no-owner", "--no-acl", "--clean", DB_NAME],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=env
@@ -315,3 +315,60 @@ async def backup_images(_: bool = Depends(require_admin)):
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.post("/admin/restore/database")
+async def restore_database(file: UploadFile = File(...), _: bool = Depends(require_admin)):
+    if not file.filename.endswith('.sql'):
+        return RedirectResponse(url="/admin/backup?error=Please+upload+a+SQL+file", status_code=303)
+    
+    content = await file.read()
+    
+    env = os.environ.copy()
+    env["PGPASSWORD"] = DB_PASSWORD
+    
+    process = subprocess.Popen(
+        ["psql", "-U", DB_USER, "-h", DB_HOST, "-p", str(DB_PORT), DB_NAME],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env
+    )
+    stdout, stderr = process.communicate(input=content)
+    
+    if process.returncode != 0:
+        error_msg = stderr.decode('utf-8', errors='replace')[:200]
+        return RedirectResponse(url=f"/admin/backup?error=Database+restore+failed", status_code=303)
+    
+    return RedirectResponse(url="/admin/backup?message=Database+restored+successfully", status_code=303)
+
+@router.post("/admin/restore/covers")
+async def restore_covers(files: list[UploadFile] = File(...), _: bool = Depends(require_admin)):
+    try:
+        os.makedirs(COVERS_DIR, exist_ok=True)
+        
+        for file in files:
+            if file.filename:
+                content = await file.read()
+                filepath = os.path.join(COVERS_DIR, file.filename)
+                with open(filepath, 'wb') as f:
+                    f.write(content)
+        
+        return RedirectResponse(url="/admin/backup?message=Covers+restored+successfully", status_code=303)
+    except Exception as e:
+        return RedirectResponse(url="/admin/backup?error=Failed+to+restore+covers", status_code=303)
+
+@router.post("/admin/restore/artists")
+async def restore_artists(files: list[UploadFile] = File(...), _: bool = Depends(require_admin)):
+    try:
+        os.makedirs(ARTISTS_DIR, exist_ok=True)
+        
+        for file in files:
+            if file.filename:
+                content = await file.read()
+                filepath = os.path.join(ARTISTS_DIR, file.filename)
+                with open(filepath, 'wb') as f:
+                    f.write(content)
+        
+        return RedirectResponse(url="/admin/backup?message=Artist+images+restored+successfully", status_code=303)
+    except Exception as e:
+        return RedirectResponse(url="/admin/backup?error=Failed+to+restore+artist+images", status_code=303)
