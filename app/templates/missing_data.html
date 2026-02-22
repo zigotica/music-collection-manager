@@ -40,7 +40,7 @@
                     {% endif %}
                 </td>
                 <td><a href="/artist/{{ album.artist }}">{{ album.artist }}</a></td>
-                <td><a href="/albums/{{ album.id }}">{{ album.title }}</a></td>
+                <td><a href="{{ album_url(album) }}">{{ album.title }}</a></td>
                 <td>{% if album.physical_format %}<a href="/format/{{ album.physical_format }}">{{ album.physical_format }}</a>{% else %}-{% endif %}</td>
                 <td>{% if album.year %}<a href="/year/{{ album.year }}">{{ album.year }}</a>{% else %}-{% endif %}</td>
                 <td>
@@ -61,7 +61,7 @@
                     {% endfor %}
                 </td>
                 <td>
-                    <a href="/albums/{{ album.id }}/edit" class="btn btn-small">Edit</a>
+                    <a href="{{ album_url(album) }}/edit" class="btn btn-small">Edit</a>
                 </td>
             </tr>
             {% endfor %}
@@ -81,7 +81,7 @@ async function acceptDiscogsYear(albumId, button) {
     button.textContent = '...';
     
     try {
-        const response = await fetch(`/albums/${albumId}/accept-discogs-year`, {
+        const response = await fetch(`/albums/${albumId}-dummy/accept-discogs-year`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

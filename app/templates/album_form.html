@@ -6,7 +6,7 @@
 <div class="form-container">
     <h1>{% if is_edit %}Edit Album{% else %}Add New Album{% endif %}</h1>
     
-    <form action="{% if is_edit %}/albums/{{ album.id }}{% else %}/albums{% endif %}" method="post" enctype="multipart/form-data" class="album-form">
+    <form action="{% if is_edit %}{{ album_url(album) }}{% else %}/albums{% endif %}" method="post" enctype="multipart/form-data" class="album-form">
         <div class="form-group">
             <label for="title">Title *</label>
             <input type="text" id="title" name="title" value="{% if album %}{{ album.title }}{% endif %}" required>
@@ -60,7 +60,7 @@
         
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">{% if is_edit %}Save Changes{% else %}Add Album{% endif %}</button>
-            <a href="{% if album %}/albums/{{ album.id }}{% else %}/{% endif %}" class="btn">Cancel</a>
+            <a href="{% if album %}{{ album_url(album) }}{% else %}/{% endif %}" class="btn">Cancel</a>
         </div>
     </form>
 </div>
