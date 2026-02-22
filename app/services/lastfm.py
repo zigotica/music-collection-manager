@@ -230,10 +230,22 @@ async def scrape_album(album) -> dict:
     if not needs_cover and not needs_year and not needs_genres:
         return result
     
+    artist_variants = [album.artist]
+    if ' / ' in album.artist:
+        artist_variants.append(album.artist.split(' / ')[0])
+    if ' & ' in album.artist:
+        artist_variants.append(album.artist.split(' & ')[0])
+    if ', ' in album.artist:
+        artist_variants.append(album.artist.split(', ')[0])
+    
     if needs_cover or needs_year:
-        album_info = await get_album_info(album.artist, album.title)
+        album_info = {}
+        for artist_name in artist_variants:
+            album_info = await get_album_info(artist_name, album.title)
+            if album_info.get('cover_url') or album_info.get('year'):
+                break
         
-        if needs_cover and "cover_url" in album_info and album_info["cover_url"]:
+        if needs_cover and album_info.get("cover_url"):
             ext = album_info["cover_url"].split(".")[-1] or "jpg"
             if ext not in ["jpg", "jpeg", "png", "gif", "webp"]:
                 ext = "jpg"
@@ -244,17 +256,19 @@ async def scrape_album(album) -> dict:
                 result["cover_updated"] = True
                 result["updated"] = True
         
-        if needs_year and "year" in album_info and album_info["year"]:
+        if needs_year and album_info.get("year"):
             album.year = album_info["year"]
             result["year_updated"] = True
             result["updated"] = True
     
     if needs_genres:
-        tags = await get_artist_top_tags(album.artist)
-        if tags:
-            album.genres = tags
-            result["genres_updated"] = True
-            result["updated"] = True
+        for artist_name in artist_variants:
+            tags = await get_artist_top_tags(artist_name)
+            if tags:
+                album.genres = tags
+                result["genres_updated"] = True
+                result["updated"] = True
+                break
     
     if result["updated"]:
         album.save()
