@@ -125,6 +125,31 @@ async def get_artist_top_tags(artist: str) -> List[str]:
         return []
 
 
+async def get_album_release_year_from_html(artist: str, album: str) -> Optional[int]:
+    try:
+        encoded_artist = quote(artist, safe='')
+        encoded_album = quote(album, safe='')
+        url = f"https://www.last.fm/music/{encoded_artist}/{encoded_album}"
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url, follow_redirects=True)
+            response.raise_for_status()
+            
+            import re
+            match = re.search(r'<dd class="catalogue-metadata-description">(\d+)\s+\w+\s+(\d{4})</dd>', response.text)
+            if match:
+                return int(match.group(2))
+            
+            match = re.search(r'<dd class="catalogue-metadata-description">(\d{4})</dd>', response.text)
+            if match:
+                return int(match.group(1))
+            
+            logger.warning(f"No release date found for {artist} - {album}")
+            return None
+    except Exception as e:
+        logger.error(f"Error scraping album HTML for {artist} - {album}: {e}")
+        return None
+
+
 async def get_album_info(artist: str, album: str) -> dict:
     if not LASTFM_API_KEY:
         return {}
@@ -156,13 +181,9 @@ async def get_album_info(artist: str, album: str) -> dict:
                         result["cover_url"] = img["#text"]
                         break
             
-            if "wiki" in album_data and "published" in album_data["wiki"]:
-                published = album_data["wiki"]["published"]
-                if published:
-                    try:
-                        result["year"] = int(published.split()[2][:4])
-                    except (ValueError, IndexError):
-                        pass
+            year = await get_album_release_year_from_html(artist, album)
+            if year:
+                result["year"] = year
             
             return result
     except Exception:

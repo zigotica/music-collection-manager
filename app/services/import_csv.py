@@ -84,20 +84,21 @@ def parse_discogs_csv(csv_content: bytes, is_wanted: bool = False) -> dict:
                 })
                 continue
             
+            notes = row.get('Notes', '').strip() or None
+            
+            year_discogs_release = None
             year_str = row.get('Released', '').strip()
-            year = None
             if year_str:
                 try:
-                    year = int(year_str[:4])
+                    year_discogs_release = int(year_str[:4])
                 except ValueError:
                     pass
-            
-            notes = row.get('Notes', '').strip() or None
             
             Album.create(
                 title=title,
                 artist=artist,
-                year=year,
+                year=None,
+                year_discogs_release=year_discogs_release,
                 physical_format=physical_format,
                 genres=[],
                 cover_image_path=None,
@@ -135,3 +136,60 @@ def get_import_stats() -> dict:
         'missing_cover': missing_cover,
         'missing_genres': missing_genres
     }
+
+
+def update_discogs_years(csv_content: bytes) -> dict:
+    results = {
+        'updated': 0,
+        'not_found': 0,
+        'errors': []
+    }
+    
+    try:
+        content = csv_content.decode('utf-8-sig')
+    except UnicodeDecodeError:
+        try:
+            content = csv_content.decode('latin-1')
+        except UnicodeDecodeError as e:
+            results['errors'].append(f"Encoding error: {str(e)}")
+            return results
+    
+    reader = csv.DictReader(io.StringIO(content))
+    
+    for row_num, row in enumerate(reader, start=2):
+        try:
+            artist = row.get('Artist', '').strip()
+            title = row.get('Title', '').strip()
+            
+            if not artist or not title:
+                continue
+            
+            discogs_format = row.get('Format', '').strip()
+            physical_format = map_format(discogs_format)
+            
+            year_str = row.get('Released', '').strip()
+            if not year_str:
+                continue
+            
+            try:
+                year_discogs = int(year_str[:4])
+            except ValueError:
+                continue
+            
+            album = Album.select().where(
+                (Album.artist == artist) & 
+                (Album.title == title) &
+                (Album.physical_format == physical_format)
+            ).first()
+            
+            if album:
+                album.year_discogs_release = year_discogs
+                album.save()
+                results['updated'] += 1
+            else:
+                results['not_found'] += 1
+            
+        except Exception as e:
+            results['errors'].append(f"Row {row_num}: {str(e)}")
+    
+    return results

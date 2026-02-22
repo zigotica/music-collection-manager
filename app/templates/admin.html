@@ -168,6 +168,15 @@
                 <button type="submit" class="btn btn-primary">Upload Wishlist CSV</button>
             </form>
         </div>
+        
+        <div class="import-card">
+            <h3>Update Years</h3>
+            <p>Update Discogs years for existing albums</p>
+            <form action="/admin/import/discogs-years" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" accept=".csv" required>
+                <button type="submit" class="btn btn-primary">Upload CSV for Years</button>
+            </form>
+        </div>
     </div>
 </div>
 

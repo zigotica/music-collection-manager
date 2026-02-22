@@ -102,6 +102,24 @@ async def import_wishlist(request: Request, file: UploadFile = File(...), _: boo
     
     return RedirectResponse(url="/admin", status_code=303)
 
+@router.post("/admin/import/discogs-years")
+async def import_discogs_years(request: Request, file: UploadFile = File(...), _: bool = Depends(require_admin)):
+    from app.services.import_csv import update_discogs_years
+    
+    if not file.filename.endswith('.csv'):
+        return RedirectResponse(
+            url="/admin?error=Please+upload+a+CSV+file", 
+            status_code=303
+        )
+    
+    content = await file.read()
+    results = update_discogs_years(content)
+    
+    return RedirectResponse(
+        url=f"/admin?message=Updated+{results['updated']}+albums+with+Discogs+years", 
+        status_code=303
+    )
+
 @router.post("/admin/scrape")
 async def bulk_scrape(request: Request, _: bool = Depends(require_admin)):
     all_albums = list(Album.select())

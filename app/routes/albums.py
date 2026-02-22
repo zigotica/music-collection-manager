@@ -218,3 +218,22 @@ async def scrape_single_album(album_id: int, _: bool = Depends(require_admin)):
         url=f"/albums/{album_id}?message={message}", 
         status_code=303
     )
+
+@router.post("/albums/{album_id}/accept-discogs-year")
+async def accept_discogs_year(album_id: int, _: bool = Depends(require_admin)):
+    try:
+        album = Album.get_by_id(album_id)
+    except Album.DoesNotExist:
+        raise HTTPException(status_code=404, detail="Album not found")
+    
+    if album.year_discogs_release:
+        album.year = album.year_discogs_release
+        album.save()
+        message = "Year updated from Discogs"
+    else:
+        message = "No Discogs year available"
+    
+    return RedirectResponse(
+        url=f"/albums/{album_id}?message={message}", 
+        status_code=303
+    )
