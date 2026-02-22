@@ -17,9 +17,40 @@ async def admin_page(request: Request, message: str = None, error: str = None, _
     import_results = _last_import_results
     _last_import_results = None
     
+    artist_names = list(Album.select(Album.artist).distinct())
+    total_artists = len(artist_names)
+    
+    artists_missing_image = 0
+    artists_missing_bio = 0
+    artists_missing_genres = 0
+    
+    for name_tuple in artist_names:
+        artist_name = name_tuple.artist
+        artist = Artist.select().where(Artist.name == artist_name).first()
+        
+        if not artist:
+            artists_missing_image += 1
+            artists_missing_bio += 1
+            artists_missing_genres += 1
+        else:
+            if not artist.image_url:
+                artists_missing_image += 1
+            if not artist.bio:
+                artists_missing_bio += 1
+            if not artist.genres or artist.genres == [] or artist.genres == '[]':
+                artists_missing_genres += 1
+    
+    artist_stats = {
+        'total': total_artists,
+        'missing_image': artists_missing_image,
+        'missing_bio': artists_missing_bio,
+        'missing_genres': artists_missing_genres
+    }
+    
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "stats": stats,
+        "artist_stats": artist_stats,
         "message": message,
         "error": error,
         "import_results": import_results
@@ -127,15 +158,64 @@ async def missing_data_page(request: Request, _: bool = Depends(require_admin)):
 async def bulk_scrape_artists(request: Request, _: bool = Depends(require_admin)):
     artist_names = list(Album.select(Album.artist).distinct())
     
-    updated_count = 0
+    artists_to_scrape = []
     for name_tuple in artist_names:
         artist_name = name_tuple.artist
+        artist = Artist.select().where(Artist.name == artist_name).first()
+        
+        if not artist:
+            artists_to_scrape.append(artist_name)
+        elif not artist.image_url or not artist.bio or not artist.genres or artist.genres == [] or artist.genres == '[]':
+            artists_to_scrape.append(artist_name)
+    
+    if not artists_to_scrape:
+        return RedirectResponse(
+            url="/admin?message=No+artists+need+scraping", 
+            status_code=303
+        )
+    
+    updated_count = 0
+    for artist_name in artists_to_scrape:
         result = await scrape_artist_profile(artist_name)
         if result["updated"]:
             updated_count += 1
     
-    message = f"Scraped {updated_count} artist profiles"
+    message = f"Scraped {updated_count} of {len(artists_to_scrape)} artist profiles"
     return RedirectResponse(
         url=f"/admin?message={message}", 
         status_code=303
     )
+
+@router.get("/admin/missing-artists", response_class=HTMLResponse)
+async def missing_artists_page(request: Request, _: bool = Depends(require_admin)):
+    artist_names = list(Album.select(Album.artist).distinct())
+    
+    artists_with_missing = []
+    for name_tuple in artist_names:
+        artist_name = name_tuple.artist
+        artist = Artist.select().where(Artist.name == artist_name).first()
+        album_count = Album.select().where(Album.artist == artist_name).count()
+        
+        missing = []
+        if not artist:
+            missing.extend(['Image', 'Bio', 'Genres'])
+        else:
+            if not artist.image_url:
+                missing.append('Image')
+            if not artist.bio:
+                missing.append('Bio')
+            if not artist.genres or artist.genres == [] or artist.genres == '[]':
+                missing.append('Genres')
+        
+        if missing:
+            artists_with_missing.append({
+                'name': artist_name,
+                'artist': artist,
+                'album_count': album_count,
+                'missing': missing
+            })
+    
+    return templates.TemplateResponse("missing_artists.html", {
+        "request": request,
+        "artists_with_missing": artists_with_missing
+    })

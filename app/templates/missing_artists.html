@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Artists with Missing Data - Music Library{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Artists with Missing Data</h1>
+    <span class="count">{{ artists_with_missing | length }} artists</span>
+</div>
+
+<div class="toolbar">
+    <a href="/admin" class="btn">← Back to Admin</a>
+    <form action="/admin/scrape-artists" method="post" style="display: inline;">
+        <button type="submit" class="btn btn-primary">Scrape Missing Artists</button>
+    </form>
+</div>
+
+{% if artists_with_missing %}
+<div class="admin-section">
+    <table class="mapping-table">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Artist</th>
+                <th>Albums</th>
+                <th>Missing</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in artists_with_missing %}
+            <tr>
+                <td>
+                    {% if item.artist and item.artist.image_url %}
+                    <img src="{{ ARTISTS_URL }}{{ item.artist.image_url }}" alt="{{ item.name }}" class="thumbnail">
+                    {% else %}
+                    <div class="thumbnail artist-image-placeholder-small"><span>{{ item.name[0] }}</span></div>
+                    {% endif %}
+                </td>
+                <td><a href="/artist/{{ item.name | urlencode }}">{{ item.name }}</a></td>
+                <td>{{ item.album_count }}</td>
+                <td>
+                    {% for field in item.missing %}
+                    <span class="tag tag-missing">{{ field }}</span>
+                    {% endfor %}
+                </td>
+                <td>
+                    <a href="/artist/{{ item.name | urlencode }}/edit" class="btn btn-small">Edit</a>
+                    <form action="/artist/{{ item.name | urlencode }}/scrape" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-small">Scrape</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No artists with missing data. All set!</p>
+    <a href="/admin" class="btn">Back to Admin</a>
+</div>
+{% endif %}
+{% endblock %}

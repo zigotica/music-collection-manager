@@ -122,6 +122,31 @@
 </div>
 
 <div class="admin-section">
+    <h2>Artist Stats</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-value">{{ artist_stats.total }}</span>
+            <span class="stat-label">Total Artists</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">{{ artist_stats.missing_image }}</span>
+            <span class="stat-label">Missing Image</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">{{ artist_stats.missing_bio }}</span>
+            <span class="stat-label">Missing Bio</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">{{ artist_stats.missing_genres }}</span>
+            <span class="stat-label">Missing Genres</span>
+        </div>
+    </div>
+    <div style="margin-top: 15px;">
+        <a href="/admin/missing-artists" class="btn">View All Artists with Missing Data</a>
+    </div>
+</div>
+
+<div class="admin-section">
     <h2>Import from Discogs CSV</h2>
     <p class="help-text">Export your collection or wishlist from Discogs as CSV, then upload here.</p>
     
@@ -180,7 +205,7 @@
     </div>
     <p class="help-text" style="margin-top: 10px;">
         <strong>Album Data:</strong> Cover images, year, genre tags for albums missing data.<br>
-        <strong>Artist Profiles:</strong> Images, bios, genre tags for all artists.
+        <strong>Artist Profiles:</strong> Images, bios, genre tags for artists missing data.
     </p>
 </div>
 {% endblock %}
