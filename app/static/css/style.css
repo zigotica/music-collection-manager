@@ -716,6 +716,7 @@ a:hover {
 .stats-container {
     max-width: 1200px;
     margin: 0 auto;
+    width: 100%;
 }
 
 .chart-section {
@@ -724,6 +725,8 @@ a:hover {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     margin-bottom: 20px;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .chart-section h2 {
@@ -745,15 +748,27 @@ a:hover {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
+    min-width: 0;
 }
 
 .chart-section.half {
     margin-bottom: 0;
+    min-width: 0;
 }
 
 @media (max-width: 900px) {
     .charts-row {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .chart-section {
+        padding: 15px;
+    }
+    
+    .chart-section h2 {
+        font-size: 1rem;
     }
 }
 
