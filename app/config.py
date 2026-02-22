@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from urllib.parse import urlparse
 
 load_dotenv()
 
@@ -7,6 +8,13 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://musicuser:musicpass@music
 LASTFM_API_KEY = os.getenv("LASTFM_API_KEY", "")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 SECRET_KEY = os.getenv("SECRET_KEY")
+
+parsed_db = urlparse(DATABASE_URL)
+DB_HOST = parsed_db.hostname
+DB_PORT = parsed_db.port or 5432
+DB_USER = parsed_db.username
+DB_PASSWORD = parsed_db.password
+DB_NAME = parsed_db.path.lstrip('/')
 
 basedir = os.getcwd()
 UPLOAD_DIR = "app/static/uploads"

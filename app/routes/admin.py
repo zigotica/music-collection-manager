@@ -1,10 +1,16 @@
 from fastapi import APIRouter, Request, UploadFile, File, Form, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
-from app.services.import_csv import parse_discogs_csv, get_import_stats
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from app.services.import_csv import parse_discogs_csv, get_import_stats, update_discogs_years
 from app.services.lastfm import scrape_album, scrape_artist as scrape_artist_profile
 from app.models import Album, Artist
 from app.auth import require_admin
 from app.templates_globals import templates
+from app.config import COVERS_DIR, ARTISTS_DIR, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME
+import os
+import io
+import zipfile
+import subprocess
+from datetime import datetime
 
 router = APIRouter()
 
@@ -237,3 +243,75 @@ async def missing_artists_page(request: Request, _: bool = Depends(require_admin
         "request": request,
         "artists_with_missing": artists_with_missing
     })
+
+@router.get("/admin/backup", response_class=HTMLResponse)
+async def backup_page(request: Request, _: bool = Depends(require_admin), message: str = None, error: str = None):
+    stats = {
+        'album_count': Album.select().count(),
+        'artist_count': Artist.select().count(),
+        'covers_count': len([f for f in os.listdir(COVERS_DIR) if os.path.isfile(os.path.join(COVERS_DIR, f))]) if os.path.exists(COVERS_DIR) else 0,
+        'artist_images_count': len([f for f in os.listdir(ARTISTS_DIR) if os.path.isfile(os.path.join(ARTISTS_DIR, f))]) if os.path.exists(ARTISTS_DIR) else 0
+    }
+    return templates.TemplateResponse("backup.html", {
+        "request": request,
+        "stats": stats,
+        "message": message,
+        "error": error
+    })
+
+@router.get("/admin/backup/database")
+async def backup_database(_: bool = Depends(require_admin)):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"music_library_backup_{timestamp}.sql"
+    
+    env = os.environ.copy()
+    env["PGPASSWORD"] = DB_PASSWORD
+    
+    process = subprocess.Popen(
+        ["pg_dump", "-U", DB_USER, "-h", DB_HOST, "-p", str(DB_PORT), "--no-owner", "--no-acl", DB_NAME],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env
+    )
+    stdout, stderr = process.communicate()
+    
+    if process.returncode != 0:
+        return RedirectResponse(url="/admin/backup?error=Database+export+failed", status_code=303)
+    
+    lines = stdout.decode('utf-8').split('\n')
+    clean_lines = [line for line in lines if not line.startswith('\\restrict')]
+    clean_output = '\n'.join(clean_lines).encode('utf-8')
+    
+    return StreamingResponse(
+        io.BytesIO(clean_output),
+        media_type="application/sql",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@router.get("/admin/backup/images")
+async def backup_images(_: bool = Depends(require_admin)):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"music_library_images_{timestamp}.zip"
+    
+    zip_buffer = io.BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        if os.path.exists(COVERS_DIR):
+            for file in os.listdir(COVERS_DIR):
+                filepath = os.path.join(COVERS_DIR, file)
+                if os.path.isfile(filepath):
+                    zipf.write(filepath, f"covers/{file}")
+        
+        if os.path.exists(ARTISTS_DIR):
+            for file in os.listdir(ARTISTS_DIR):
+                filepath = os.path.join(ARTISTS_DIR, file)
+                if os.path.isfile(filepath):
+                    zipf.write(filepath, f"artists/{file}")
+    
+    zip_buffer.seek(0)
+    
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
