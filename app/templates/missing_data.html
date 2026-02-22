@@ -61,7 +61,7 @@
                     {% endfor %}
                 </td>
                 <td>
-                    <a href="{{ album_url(album) }}/edit" class="btn btn-small">Edit</a>
+                    <a href="/albums/{{ album.id }}/edit" class="btn btn-small">Edit</a>
                 </td>
             </tr>
             {% endfor %}
@@ -81,7 +81,7 @@ async function acceptDiscogsYear(albumId, button) {
     button.textContent = '...';
     
     try {
-        const response = await fetch(`/albums/${albumId}-dummy/accept-discogs-year`, {
+        const response = await fetch(`/albums/${albumId}/accept-discogs-year`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

@@ -125,26 +125,11 @@ async def create_album(
     
     return RedirectResponse(url=f"/albums/{album.id}", status_code=303)
 
-@router.get("/albums/{album_slug:path}", response_class=HTMLResponse)
-async def get_album(request: Request, album_slug: str, message: str = None):
+@router.get("/albums/{album_id:int}/edit", response_class=HTMLResponse)
+async def edit_album_form(request: Request, album_id: int, _: bool = Depends(require_admin)):
     try:
-        album_id = int(album_slug.split('-')[0])
         album = Album.get_by_id(album_id)
-    except (ValueError, Album.DoesNotExist):
-        raise HTTPException(status_code=404, detail="Album not found")
-    
-    return templates.TemplateResponse("album_detail.html", {
-        "request": request,
-        "album": album,
-        "message": message
-    })
-
-@router.get("/albums/{album_slug:path}/edit", response_class=HTMLResponse)
-async def edit_album_form(request: Request, album_slug: str, _: bool = Depends(require_admin)):
-    try:
-        album_id = int(album_slug.split('-')[0])
-        album = Album.get_by_id(album_id)
-    except (ValueError, Album.DoesNotExist):
+    except Album.DoesNotExist:
         raise HTTPException(status_code=404, detail="Album not found")
     
     return templates.TemplateResponse("album_form.html", {
@@ -153,9 +138,9 @@ async def edit_album_form(request: Request, album_slug: str, _: bool = Depends(r
         "is_edit": True
     })
 
-@router.post("/albums/{album_slug:path}")
+@router.post("/albums/{album_id:int}")
 async def update_album(
-    album_slug: str,
+    album_id: int,
     title: str = Form(...),
     artist: str = Form(...),
     year: int = Form(None),
@@ -167,9 +152,8 @@ async def update_album(
     _: bool = Depends(require_admin)
 ):
     try:
-        album_id = int(album_slug.split('-')[0])
         album = Album.get_by_id(album_id)
-    except (ValueError, Album.DoesNotExist):
+    except Album.DoesNotExist:
         raise HTTPException(status_code=404, detail="Album not found")
     
     if cover and cover.filename:
@@ -196,27 +180,25 @@ async def update_album(
     
     return RedirectResponse(url=album_url(album), status_code=303)
 
-@router.post("/albums/{album_slug:path}/delete")
-async def delete_album(album_slug: str, _: bool = Depends(require_admin)):
+@router.post("/albums/{album_id:int}/delete")
+async def delete_album(album_id: int, _: bool = Depends(require_admin)):
     try:
-        album_id = int(album_slug.split('-')[0])
         album = Album.get_by_id(album_id)
         if album.cover_image_path:
             filepath = os.path.join(COVERS_DIR, album.cover_image_path)
             if os.path.exists(filepath):
                 os.remove(filepath)
         album.delete_instance()
-    except (ValueError, Album.DoesNotExist):
+    except Album.DoesNotExist:
         raise HTTPException(status_code=404, detail="Album not found")
     
     return RedirectResponse(url="/", status_code=303)
 
-@router.post("/albums/{album_slug:path}/scrape")
-async def scrape_single_album(album_slug: str, _: bool = Depends(require_admin)):
+@router.post("/albums/{album_id:int}/scrape")
+async def scrape_single_album(album_id: int, _: bool = Depends(require_admin)):
     try:
-        album_id = int(album_slug.split('-')[0])
         album = Album.get_by_id(album_id)
-    except (ValueError, Album.DoesNotExist):
+    except Album.DoesNotExist:
         raise HTTPException(status_code=404, detail="Album not found")
     
     result = await scrape_album(album)
@@ -231,12 +213,11 @@ async def scrape_single_album(album_slug: str, _: bool = Depends(require_admin))
         status_code=303
     )
 
-@router.post("/albums/{album_slug:path}/accept-discogs-year")
-async def accept_discogs_year(album_slug: str, _: bool = Depends(require_admin)):
+@router.post("/albums/{album_id:int}/accept-discogs-year")
+async def accept_discogs_year(album_id: int, _: bool = Depends(require_admin)):
     try:
-        album_id = int(album_slug.split('-')[0])
         album = Album.get_by_id(album_id)
-    except (ValueError, Album.DoesNotExist):
+    except Album.DoesNotExist:
         raise HTTPException(status_code=404, detail="Album not found")
     
     if album.year_discogs_release:
@@ -250,3 +231,17 @@ async def accept_discogs_year(album_slug: str, _: bool = Depends(require_admin))
         url=f"{album_url(album)}?message={message}", 
         status_code=303
     )
+
+@router.get("/albums/{album_slug:path}", response_class=HTMLResponse)
+async def get_album(request: Request, album_slug: str, message: str = None):
+    try:
+        album_id = int(album_slug.split('-')[0])
+        album = Album.get_by_id(album_id)
+    except (ValueError, Album.DoesNotExist):
+        raise HTTPException(status_code=404, detail="Album not found")
+    
+    return templates.TemplateResponse("album_detail.html", {
+        "request": request,
+        "album": album,
+        "message": message
+    })

@@ -54,11 +54,11 @@
             </div>
             
             <div class="actions">
-                <a href="{{ album_url(album) }}/edit" class="btn">Edit</a>
-                <form action="{{ album_url(album) }}/scrape" method="post" style="display: inline;">
+                <a href="/albums/{{ album.id }}/edit" class="btn">Edit</a>
+                <form action="/albums/{{ album.id }}/scrape" method="post" style="display: inline;">
                     <button type="submit" class="btn">Scrape Metadata</button>
                 </form>
-                <form action="{{ album_url(album) }}/delete" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this album?')">
+                <form action="/albums/{{ album.id }}/delete" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this album?')">
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             </div>
