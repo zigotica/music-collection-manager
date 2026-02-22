@@ -165,7 +165,7 @@ async def browse_artist(request: Request, artist_name: str, sort: str = "year", 
 
 @router.get("/year/{year}", response_class=HTMLResponse)
 async def browse_year(request: Request, year: int, sort: str = "title", order: str = "asc"):
-    query = Album.select().where(Album.year == year)
+    query = Album.select().where((Album.year == year) & (Album.is_wanted == False))
     
     if sort == "artist":
         query = query.order_by(Album.artist.asc() if order == "asc" else Album.artist.desc())
@@ -192,7 +192,7 @@ async def browse_decade(request: Request, decade: str, sort: str = "artist", ord
         decade_end = 0
     
     query = Album.select().where(
-        (Album.year >= decade_start) & (Album.year <= decade_end)
+        (Album.year >= decade_start) & (Album.year <= decade_end) & (Album.is_wanted == False)
     )
     
     if sort == "title":
@@ -216,7 +216,7 @@ async def browse_decade(request: Request, decade: str, sort: str = "artist", ord
 
 @router.get("/format/{format_name}", response_class=HTMLResponse)
 async def browse_format(request: Request, format_name: str, sort: str = "artist", order: str = "asc"):
-    query = Album.select().where(Album.physical_format == format_name)
+    query = Album.select().where((Album.physical_format == format_name) & (Album.is_wanted == False))
     
     if sort == "title":
         query = query.order_by(Album.title.asc() if order == "asc" else Album.title.desc())
@@ -237,7 +237,7 @@ async def browse_format(request: Request, format_name: str, sort: str = "artist"
 
 @router.get("/genre/{tag}", response_class=HTMLResponse)
 async def browse_genre(request: Request, tag: str, sort: str = "artist", order: str = "asc"):
-    albums = list(Album.select().where(Album.genres.contains(tag)))
+    albums = list(Album.select().where((Album.genres.contains(tag)) & (Album.is_wanted == False)))
     
     if sort == "title":
         albums.sort(key=lambda a: a.title, reverse=(order == "desc"))
