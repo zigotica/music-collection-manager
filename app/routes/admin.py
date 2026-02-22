@@ -1,13 +1,12 @@
 from fastapi import APIRouter, Request, UploadFile, File, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from app.services.import_csv import parse_discogs_csv, get_import_stats
 from app.services.lastfm import scrape_album, scrape_artist as scrape_artist_profile
 from app.models import Album, Artist
 from app.auth import require_admin
+from app.templates_globals import templates
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 _last_import_results = None
 

@@ -2,16 +2,15 @@ import os
 import json
 from fastapi import APIRouter, Request, Form, UploadFile, File, HTTPException, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse
-from fastapi.templating import Jinja2Templates
 from peewee import fn
 from app.models import Album, db
-from app.config import UPLOAD_DIR
+from app.config import COVERS_DIR
 from app.services.lastfm import scrape_album
 from app.services.image_utils import resize_image
 from app.auth import require_admin
+from app.templates_globals import templates
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
@@ -98,11 +97,11 @@ async def create_album(
             content = await cover.read()
             resized_content, ext = resize_image(content)
             filename = f"{artist}_{title}.{ext}".replace(" ", "_").replace("/", "_")
-            filepath = os.path.join(UPLOAD_DIR, filename)
-            os.makedirs(UPLOAD_DIR, exist_ok=True)
+            os.makedirs(COVERS_DIR, exist_ok=True)
+            filepath = os.path.join(COVERS_DIR, filename)
             with open(filepath, "wb") as f:
                 f.write(resized_content)
-            cover_path = f"/static/uploads/{filename}"
+            cover_path = filename
     
     genre_list = [g.strip() for g in genres.split(",") if g.strip()] if genres else []
     
@@ -168,11 +167,11 @@ async def update_album(
             content = await cover.read()
             resized_content, ext = resize_image(content)
             filename = f"{artist}_{title}_{album_id}.{ext}".replace(" ", "_").replace("/", "_")
-            filepath = os.path.join(UPLOAD_DIR, filename)
-            os.makedirs(UPLOAD_DIR, exist_ok=True)
+            os.makedirs(COVERS_DIR, exist_ok=True)
+            filepath = os.path.join(COVERS_DIR, filename)
             with open(filepath, "wb") as f:
                 f.write(resized_content)
-            album.cover_image_path = f"/static/uploads/{filename}"
+            album.cover_image_path = filename
     
     genre_list = [g.strip() for g in genres.split(",") if g.strip()] if genres else []
     
@@ -192,7 +191,7 @@ async def delete_album(album_id: int, _: bool = Depends(require_admin)):
     try:
         album = Album.get_by_id(album_id)
         if album.cover_image_path:
-            filepath = os.path.join("app", album.cover_image_path.lstrip("/"))
+            filepath = os.path.join(COVERS_DIR, album.cover_image_path)
             if os.path.exists(filepath):
                 os.remove(filepath)
         album.delete_instance()

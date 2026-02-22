@@ -5,7 +5,8 @@ import logging
 import re
 from urllib.parse import quote
 from typing import Optional, List
-from app.config import LASTFM_API_KEY, UPLOAD_DIR
+from app.config import LASTFM_API_KEY, COVERS_DIR, ARTISTS_DIR
+from app.services.image_utils import resize_image
 from app.models import Artist
 
 logger = logging.getLogger(__name__)
@@ -177,13 +178,18 @@ async def download_cover(cover_url: str, filename: str) -> Optional[str]:
             response = await client.get(cover_url)
             response.raise_for_status()
             
-            os.makedirs(UPLOAD_DIR, exist_ok=True)
-            filepath = os.path.join(UPLOAD_DIR, filename)
+            content = response.content
+            resized_content, ext = resize_image(content)
+            
+            filename = filename.rsplit('.', 1)[0] + f'.{ext}'
+            
+            os.makedirs(COVERS_DIR, exist_ok=True)
+            filepath = os.path.join(COVERS_DIR, filename)
             
             with open(filepath, "wb") as f:
-                f.write(response.content)
+                f.write(resized_content)
             
-            return f"/static/uploads/{filename}"
+            return filename
     except Exception:
         return None
 
@@ -235,6 +241,32 @@ async def scrape_album(album) -> dict:
     return result
 
 
+async def download_artist_image(image_url: str, artist_name: str) -> Optional[str]:
+    if not image_url:
+        return None
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(image_url)
+            response.raise_for_status()
+            
+            content = response.content
+            resized_content, ext = resize_image(content)
+            
+            filename = f"{artist_name.replace(' ', '_').replace('/', '_')}.{ext}"
+            
+            os.makedirs(ARTISTS_DIR, exist_ok=True)
+            filepath = os.path.join(ARTISTS_DIR, filename)
+            
+            with open(filepath, "wb") as f:
+                f.write(resized_content)
+            
+            return filename
+    except Exception as e:
+        logger.error(f"Error downloading artist image for {artist_name}: {e}")
+        return None
+
+
 async def scrape_artist(artist_name: str) -> dict:
     result = {
         "updated": False,
@@ -254,10 +286,14 @@ async def scrape_artist(artist_name: str) -> dict:
     
     artist = Artist.select().where(Artist.name == artist_name).first()
     
+    image_filename = None
+    if artist_info.get("image_url"):
+        image_filename = await download_artist_image(artist_info["image_url"], artist_name)
+    
     if not artist:
         artist = Artist.create(
             name=artist_name,
-            image_url=artist_info.get("image_url"),
+            image_url=image_filename,
             bio=artist_info.get("bio"),
             genres=artist_info.get("genres", []),
             lastfm_url=artist_info.get("lastfm_url")
@@ -266,8 +302,8 @@ async def scrape_artist(artist_name: str) -> dict:
         result["updated"] = True
         return result
     
-    if artist_info.get("image_url") and artist_info["image_url"] != artist.image_url:
-        artist.image_url = artist_info["image_url"]
+    if image_filename and image_filename != artist.image_url:
+        artist.image_url = image_filename
         result["image_updated"] = True
         result["updated"] = True
     

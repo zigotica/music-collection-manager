@@ -48,7 +48,7 @@
         <div class="form-group">
             <label for="cover">Cover Image</label>
             {% if album and album.cover_image_path %}
-            <p class="current-cover">Current: <a href="{{ album.cover_image_path }}" target="_blank">View</a></p>
+            <p class="current-cover">Current: <a href="{{ COVERS_URL }}{{ album.cover_image_path }}" target="_blank">View</a></p>
             {% endif %}
             <input type="file" id="cover" name="cover" accept="image/*">
         </div>

@@ -33,7 +33,7 @@
             <tr>
                 <td>
                     {% if album.cover_image_path %}
-                    <img src="{{ album.cover_image_path }}" alt="{{ album.title }}" class="thumbnail">
+                    <img src="{{ COVERS_URL }}{{ album.cover_image_path }}" alt="{{ album.title }}" class="thumbnail">
                     {% else %}
                     <div class="thumbnail no-cover-small">-</div>
                     {% endif %}

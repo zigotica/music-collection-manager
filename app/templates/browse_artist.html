@@ -5,7 +5,7 @@
 {% block content %}
 <div class="artist-header">
     {% if artist and artist.image_url %}
-    <img src="{{ artist.image_url }}" alt="{{ artist_name }}" class="artist-image">
+    <img src="{{ ARTISTS_URL }}{{ artist.image_url }}" alt="{{ artist_name }}" class="artist-image">
     {% else %}
     <div class="artist-image artist-image-placeholder">
         <span>{{ artist_name[0] }}</span>
@@ -60,7 +60,7 @@
     <div class="album-card">
         <a href="/albums/{{ album.id }}" class="album-cover">
             {% if album.cover_image_path %}
-            <img src="{{ album.cover_image_path }}" alt="{{ album.title }}">
+            <img src="{{ COVERS_URL }}{{ album.cover_image_path }}" alt="{{ album.title }}">
             {% else %}
             <div class="no-cover">No Cover</div>
             {% endif %}

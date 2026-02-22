@@ -26,7 +26,7 @@
     <div class="album-card">
         <a href="/albums/{{ album.id }}" class="album-cover">
             {% if album.cover_image_path %}
-            <img src="{{ album.cover_image_path }}" alt="{{ album.title }}">
+            <img src="{{ COVERS_URL }}{{ album.cover_image_path }}" alt="{{ album.title }}">
             {% else %}
             <div class="no-cover">No Cover</div>
             {% endif %}

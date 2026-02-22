@@ -11,7 +11,7 @@
     <div class="album-detail-header">
         <div class="album-cover-large">
             {% if album.cover_image_path %}
-            <img src="{{ album.cover_image_path }}" alt="{{ album.title }}">
+            <img src="{{ COVERS_URL }}{{ album.cover_image_path }}" alt="{{ album.title }}">
             {% else %}
             <div class="no-cover large">No Cover</div>
             {% endif %}

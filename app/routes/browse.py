@@ -1,17 +1,16 @@
 from fastapi import APIRouter, Request, Form, UploadFile, File, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from peewee import fn
 from urllib.parse import quote
 import os
 from app.models import Album, Artist
 from app.services.lastfm import scrape_artist, get_or_create_artist
 from app.services.image_utils import resize_image
-from app.config import UPLOAD_DIR
+from app.config import ARTISTS_DIR
 from app.auth import require_admin
+from app.templates_globals import templates
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/artists", response_class=HTMLResponse)
 async def browse_artists(request: Request, sort: str = "name", order: str = "asc"):
@@ -87,21 +86,21 @@ async def update_artist_name(
         allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
         ext = image.filename.rsplit('.', 1)[-1].lower() if '.' in image.filename else 'jpg'
         if ext in allowed_extensions:
-            os.makedirs(UPLOAD_DIR, exist_ok=True)
+            os.makedirs(ARTISTS_DIR, exist_ok=True)
             content = await image.read()
             resized_content, ext = resize_image(content)
-            filename = f"artist_{new_name.replace(' ', '_').replace('/', '_')}.{ext}"
-            filepath = os.path.join(UPLOAD_DIR, filename)
+            filename = f"{new_name.replace(' ', '_').replace('/', '_')}.{ext}"
+            filepath = os.path.join(ARTISTS_DIR, filename)
             with open(filepath, "wb") as f:
                 f.write(resized_content)
             
             if not artist_record:
                 artist_record = Artist.create(
                     name=new_name,
-                    image_url=f"/static/uploads/{filename}"
+                    image_url=filename
                 )
             else:
-                artist_record.image_url = f"/static/uploads/{filename}"
+                artist_record.image_url = filename
     
     genre_list = [g.strip() for g in genres.split(",") if g.strip()] if genres else []
     

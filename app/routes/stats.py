@@ -1,11 +1,10 @@
 from collections import Counter
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
 from app.models import Album
+from app.templates_globals import templates
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 
 def get_decade(year):
     if year is None or year == 0:

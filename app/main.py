@@ -1,7 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Form
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -9,6 +8,7 @@ from app.models import db, create_tables, close_db
 from app.routes import albums, browse, stats, admin
 from app.auth import login, logout, is_authenticated
 from app.config import SECRET_KEY
+from app.templates_globals import templates
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,8 +21,6 @@ app = FastAPI(title="Music Library", lifespan=lifespan)
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
-templates = Jinja2Templates(directory="app/templates")
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request, error: str = None):
