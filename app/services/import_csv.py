@@ -67,12 +67,12 @@ def map_format(discogs_format: str) -> str:
     
     fmt_lower = discogs_format.lower()
     
-    if any(x in fmt_lower for x in ['7"', 'ep', 'maxi', 'single']):
-        return "EP - Single"
-    if any(x in fmt_lower for x in ['12"', 'lp', 'vinyl']):
-        return "Vinyl"
     if 'cd' in fmt_lower:
         return "CD"
+    if any(x in fmt_lower for x in ['12"', 'lp', 'vinyl']):
+        return "Vinyl"
+    if any(x in fmt_lower for x in ['7"', 'ep', 'maxi', 'single']):
+        return "EP - Single"
     if 'dvd' in fmt_lower:
         return "DVD"
     if 'ray' in fmt_lower:
@@ -80,7 +80,7 @@ def map_format(discogs_format: str) -> str:
     if 'cass' in fmt_lower:
         return "Tape"
     
-    return None
+    return discogs_format
 
 
 def parse_discogs_csv(csv_content: bytes, is_wanted: bool = False) -> dict:

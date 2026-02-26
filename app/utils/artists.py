@@ -42,8 +42,11 @@ def join_artists(artists: list) -> str:
 
 
 def strip_discogs_suffix(artist_string: str) -> str:
-    pattern = r'\s*\(\d+\)\s*$'
-    return re.sub(pattern, '', artist_string).strip()
+    pattern = r'\s*\(\d{4}\)\s*$'
+    result = re.sub(pattern, '', artist_string).strip()
+    pattern2 = r'\s*\(\d+\)\s*$'
+    result = re.sub(pattern2, '', result).strip()
+    return result
 
 
 def apply_artist_mapping(artist_string: str) -> str:
