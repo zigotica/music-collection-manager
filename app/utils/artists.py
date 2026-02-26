@@ -1,4 +1,11 @@
 import re
+import unicodedata
+
+
+def sanitize_filename(name: str) -> str:
+    name = unicodedata.normalize('NFD', name)
+    name = ''.join(c for c in name if unicodedata.category(c) != 'Mn')
+    return re.sub(r'[^\w\s\-_]', '', name)
 
 
 def split_artists(artist_string: str) -> list:

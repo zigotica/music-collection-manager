@@ -10,7 +10,7 @@ from app.services.lastfm import scrape_album
 from app.services.image_utils import resize_image
 from app.auth import require_admin
 from app.templates_globals import templates
-from app.utils.artists import apply_artist_mapping
+from app.utils.artists import apply_artist_mapping, sanitize_filename
 
 router = APIRouter()
 
@@ -106,7 +106,7 @@ async def create_album(
         if allowed_file(cover.filename):
             content = await cover.read()
             resized_content, ext = resize_image(content)
-            filename = f"{artist}_{title}.{ext}".replace(" ", "_").replace("/", "_")
+            filename = f"{sanitize_filename(artist)}_{sanitize_filename(title)}.{ext}".replace(" ", "_").replace("/", "_")
             os.makedirs(COVERS_DIR, exist_ok=True)
             filepath = os.path.join(COVERS_DIR, filename)
             with open(filepath, "wb") as f:
@@ -165,7 +165,7 @@ async def update_album(
         if allowed_file(cover.filename):
             content = await cover.read()
             resized_content, ext = resize_image(content)
-            filename = f"{artist}_{title}_{album_id}.{ext}".replace(" ", "_").replace("/", "_")
+            filename = f"{sanitize_filename(artist)}_{sanitize_filename(title)}_{album_id}.{ext}".replace(" ", "_").replace("/", "_")
             os.makedirs(COVERS_DIR, exist_ok=True)
             filepath = os.path.join(COVERS_DIR, filename)
             with open(filepath, "wb") as f:

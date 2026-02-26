@@ -10,7 +10,7 @@ from typing import Optional, List
 from app.config import LASTFM_API_KEY, USER_AGENT, COVERS_DIR, ARTISTS_DIR
 from app.services.image_utils import resize_image
 from app.models import Artist
-from app.utils.artists import split_artists, apply_artist_mapping
+from app.utils.artists import split_artists, apply_artist_mapping, sanitize_filename
 
 logger = logging.getLogger(__name__)
 LASTFM_API_BASE = "https://ws.audioscrobbler.com/2.0/"
@@ -378,7 +378,7 @@ async def scrape_album(album) -> dict:
             ext = album_info["cover_url"].split(".")[-1] or "jpg"
             if ext not in ["jpg", "jpeg", "png", "gif", "webp"]:
                 ext = "jpg"
-            filename = f"{album.artist}_{album.title}_{album.id}.{ext}".replace(" ", "_").replace("/", "_")
+            filename = f"{sanitize_filename(album.artist)}_{sanitize_filename(album.title)}_{album.id}.{ext}".replace(" ", "_").replace("/", "_")
             cover_path = await download_cover(album_info["cover_url"], filename)
             if cover_path:
                 album.cover_image_path = cover_path

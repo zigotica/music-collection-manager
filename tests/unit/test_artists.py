@@ -2,7 +2,30 @@ import pytest
 import sys
 sys.path.insert(0, '/Users/hanzonian/Documents/personal/music-library')
 
-from app.utils.artists import split_artists, strip_discogs_suffix, join_artists
+from app.utils.artists import split_artists, strip_discogs_suffix, join_artists, sanitize_filename
+
+
+class TestSanitizeFilename:
+    def test_normal_name(self):
+        assert sanitize_filename("Tool") == "Tool"
+    
+    def test_question_mark(self):
+        assert sanitize_filename("Is That You?") == "Is That You"
+    
+    def test_parentheses(self):
+        assert sanitize_filename("Album (2023)") == "Album 2023"
+    
+    def test_ellipsis(self):
+        assert sanitize_filename("Album...") == "Album"
+    
+    def test_accents_converted(self):
+        assert sanitize_filename("João Gilberto") == "Joao Gilberto"
+    
+    def test_spanish_accents(self):
+        assert sanitize_filename("El Camarón De La Isla con la colaboración") == "El Camaron De La Isla con la colaboracion"
+    
+    def test_special_chars_removed(self):
+        assert sanitize_filename("Album (2023) - Special!") == "Album 2023 - Special"
 
 
 class TestSplitArtists:
