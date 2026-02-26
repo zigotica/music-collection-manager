@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from peewee import fn
 from urllib.parse import quote
 import os
-from app.models import Album, Artist
+from app.models import Album, Artist, ArtistMapping
 from app.services.lastfm import scrape_artist, get_or_create_artist
 from app.services.image_utils import resize_image
 from app.config import ARTISTS_DIR
@@ -54,17 +54,30 @@ async def edit_artist_form(request: Request, artist_name: str, _: bool = Depends
     count = Album.select().where(Album.artist == artist_name).count()
     artist = Artist.select().where(Artist.name == artist_name).first()
     
+    original_name = artist_name
+    current = artist_name
+    visited = set()
+    while True:
+        mapping = ArtistMapping.select().where(ArtistMapping.new_name == current).first()
+        if not mapping or mapping.original_name in visited:
+            break
+        original_name = mapping.original_name
+        visited.add(mapping.original_name)
+        current = mapping.original_name
+    
     return templates.TemplateResponse("edit_artist.html", {
         "request": request,
         "artist_name": artist_name,
         "album_count": count,
-        "artist": artist
+        "artist": artist,
+        "original_name": original_name
     })
 
 @router.post("/artist/{artist_name:path}/edit")
 async def update_artist_name(
     artist_name: str,
     new_name: str = Form(...),
+    original_name: str = Form(None),
     bio: str = Form(None),
     genres: str = Form(None),
     image: UploadFile = File(None),
@@ -77,6 +90,21 @@ async def update_artist_name(
         )
     
     new_name = new_name.strip()
+    
+    if new_name != artist_name:
+        source_name = original_name if original_name else artist_name
+        
+        chained_mappings = ArtistMapping.select().where(ArtistMapping.new_name == artist_name)
+        for mapping in chained_mappings:
+            mapping.new_name = new_name
+            mapping.save()
+        
+        existing_mapping = ArtistMapping.select().where(
+            (ArtistMapping.original_name == source_name) &
+            (ArtistMapping.new_name == new_name)
+        ).first()
+        if not existing_mapping:
+            ArtistMapping.create(original_name=source_name, new_name=new_name)
     
     updated = Album.update(artist=new_name).where(Album.artist == artist_name).execute()
     

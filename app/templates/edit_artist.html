@@ -9,6 +9,9 @@
     <div class="edit-artist-info">
         <p>Artist: <strong>{{ artist_name }}</strong></p>
         <p><strong>{{ album_count }}</strong> album(s) in collection</p>
+        {% if original_name != artist_name %}
+        <p><em>Original Discogs name: {{ original_name }}</em></p>
+        {% endif %}
         
         {% if artist and artist.image_url %}
         <div class="current-artist-image">
@@ -18,6 +21,8 @@
     </div>
     
     <form action="/artist/{{ artist_name | urlencode }}/edit" method="post" enctype="multipart/form-data" class="album-form">
+        <input type="hidden" name="original_name" value="{{ original_name }}">
+        
         <div class="form-group">
             <label for="new_name">Artist Name</label>
             <input type="text" id="new_name" name="new_name" value="{{ artist_name }}" required>

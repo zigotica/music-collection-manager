@@ -1,6 +1,57 @@
 import csv
 import io
-from app.models import Album
+from app.models import Album, ArtistMapping
+
+
+def detect_artist_mappings(csv_content: bytes) -> dict:
+    results = {
+        'mappings_found': 0,
+        'mappings_created': 0,
+        'details': []
+    }
+    
+    try:
+        content = csv_content.decode('utf-8-sig')
+    except UnicodeDecodeError:
+        try:
+            content = csv_content.decode('latin-1')
+        except UnicodeDecodeError as e:
+            results['errors'] = [f"Encoding error: {str(e)}"]
+            return results
+    
+    reader = csv.DictReader(io.StringIO(content))
+    
+    for row_num, row in enumerate(reader, start=2):
+        artist = row.get('Artist', '').strip()
+        discogs_id = row.get('release_id', '').strip() or row.get('Release Id', '').strip() or row.get('Release ID', '').strip() or None
+        
+        if not artist or not discogs_id:
+            continue
+        
+        existing = Album.select().where(Album.discogs_id == discogs_id).first()
+        
+        if existing and existing.artist != artist:
+            results['details'].append({
+                'row': row_num,
+                'csv_artist': artist,
+                'db_artist': existing.artist,
+                'discogs_id': discogs_id
+            })
+            results['mappings_found'] += 1
+            
+            existing_mapping = ArtistMapping.select().where(
+                (ArtistMapping.original_name == artist) &
+                (ArtistMapping.new_name == existing.artist)
+            ).first()
+            
+            if not existing_mapping:
+                ArtistMapping.create(
+                    original_name=artist,
+                    new_name=existing.artist
+                )
+                results['mappings_created'] += 1
+    
+    return results
 
 
 def map_format(discogs_format: str) -> str:
@@ -33,6 +84,8 @@ def parse_discogs_csv(csv_content: bytes, is_wanted: bool = False) -> dict:
         'errors': []
     }
     
+    detect_artist_mappings(csv_content)
+    
     try:
         content = csv_content.decode('utf-8-sig')
     except UnicodeDecodeError:
@@ -62,6 +115,10 @@ def parse_discogs_csv(csv_content: bytes, is_wanted: bool = False) -> dict:
                     'missing': ', '.join(missing)
                 })
                 continue
+            
+            mapping = ArtistMapping.select().where(ArtistMapping.original_name == artist).first()
+            if mapping:
+                artist = mapping.new_name
             
             discogs_id = row.get('release_id', '').strip() or row.get('Release Id', '').strip() or row.get('Release ID', '').strip() or None
             

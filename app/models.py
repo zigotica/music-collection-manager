@@ -63,9 +63,18 @@ class Artist(Model):
         self.updated_at = datetime.now()
         return super().save(*args, **kwargs)
 
+class ArtistMapping(Model):
+    original_name = CharField()
+    new_name = CharField()
+    created_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        database = db
+        table_name = 'artist_mappings'
+
 def create_tables():
     db.connect()
-    db.create_tables([Album, Artist], safe=True)
+    db.create_tables([Album, Artist, ArtistMapping], safe=True)
     db.close()
 
 def close_db(e):
