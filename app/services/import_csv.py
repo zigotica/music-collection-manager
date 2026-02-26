@@ -33,30 +33,29 @@ def detect_artist_mappings(csv_content: bytes) -> dict:
         
         if existing and existing.artist != artist:
             csv_artists = split_artists(artist)
-            db_artists = split_artists(existing.artist)
             
             for csv_a in csv_artists:
-                for db_a in db_artists:
-                    if csv_a != db_a:
-                        results['details'].append({
-                            'row': row_num,
-                            'csv_artist': csv_a,
-                            'db_artist': db_a,
-                            'discogs_id': discogs_id
-                        })
-                        results['mappings_found'] += 1
-                        
-                        existing_mapping = ArtistMapping.select().where(
-                            (ArtistMapping.original_name == csv_a) &
-                            (ArtistMapping.new_name == db_a)
-                        ).first()
-                        
-                        if not existing_mapping:
-                            ArtistMapping.create(
-                                original_name=csv_a,
-                                new_name=db_a
-                            )
-                            results['mappings_created'] += 1
+                db_artist = existing.artist
+                if csv_a != db_artist:
+                    results['details'].append({
+                        'row': row_num,
+                        'csv_artist': csv_a,
+                        'db_artist': db_artist,
+                        'discogs_id': discogs_id
+                    })
+                    results['mappings_found'] += 1
+                    
+                    existing_mapping = ArtistMapping.select().where(
+                        (ArtistMapping.original_name == csv_a) &
+                        (ArtistMapping.new_name == db_artist)
+                    ).first()
+                    
+                    if not existing_mapping:
+                        ArtistMapping.create(
+                            original_name=csv_a,
+                            new_name=db_artist
+                        )
+                        results['mappings_created'] += 1
     
     return results
 

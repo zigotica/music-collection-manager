@@ -12,7 +12,27 @@ def split_artists(artist_string: str) -> list:
     artists = []
     lower = artist_string.lower()
     
-    if ' / ' in artist_string:
+    if re.search(r', .* (feat\.?|featuring|ft\.?) ', lower):
+        if ' feat. ' in lower:
+            artists = [a.strip() for a in re.split(' feat\\. ', artist_string, flags=re.IGNORECASE) if a.strip()]
+        elif ' feat ' in lower:
+            artists = [a.strip() for a in re.split(' feat ', artist_string, flags=re.IGNORECASE) if a.strip()]
+        elif ' featuring ' in lower:
+            artists = [a.strip() for a in re.split(' featuring ', artist_string, flags=re.IGNORECASE) if a.strip()]
+        elif ' ft. ' in lower:
+            artists = [a.strip() for a in re.split(' ft\\. ', artist_string, flags=re.IGNORECASE) if a.strip()]
+        elif ' ft ' in lower:
+            artists = [a.strip() for a in re.split(' ft ', artist_string, flags=re.IGNORECASE) if a.strip()]
+        
+        if artists and any(', ' in a for a in artists):
+            split_again = []
+            for a in artists:
+                if ', ' in a:
+                    split_again.extend([s.strip() for s in a.split(', ') if s.strip()])
+                else:
+                    split_again.append(a)
+            artists = split_again
+    elif ' / ' in artist_string:
         artists = artist_string.split(' / ')
     elif ' + ' in artist_string:
         artists = artist_string.split(' + ')
