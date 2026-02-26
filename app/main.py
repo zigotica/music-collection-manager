@@ -3,6 +3,18 @@ from fastapi import FastAPI, Request, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
+import logging
+
+logging.basicConfig(
+    level=logging.ERROR,
+    format="%(name)s - %(levelname)s - %(message)s"
+)
+
+uvicorn_logger = logging.getLogger("uvicorn")
+uvicorn_logger.setLevel(logging.ERROR)
+
+uvicorn_access_logger = logging.getLogger("uvicorn.access")
+uvicorn_access_logger.setLevel(logging.ERROR)
 
 from app.models import db, create_tables, close_db
 from app.routes import albums, browse, stats, admin
