@@ -29,6 +29,7 @@ class Album(Model):
     artist = CharField()
     year = IntegerField(null=True)
     year_discogs_release = IntegerField(null=True)
+    released = CharField(null=True)
     physical_format = CharField(null=True)
     genres = JSONField(null=True, default=list)
     cover_image_path = CharField(null=True)

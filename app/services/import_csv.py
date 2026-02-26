@@ -129,14 +129,17 @@ def parse_discogs_csv(csv_content: bytes, is_wanted: bool = False) -> dict:
             discogs_format = row.get('Format', '').strip()
             physical_format = map_format(discogs_format)
             
+            released = row.get('Released', '').strip() or None
+            
             existing = Album.select().where(
                 ((Album.discogs_id == discogs_id) & (discogs_id != None)) |
-                ((Album.artist == artist) & 
+                ((Album.artist == artist) &
                  (Album.title == title) &
                  (Album.physical_format == physical_format) &
+                 (Album.released == released) &
                  (Album.is_wanted == is_wanted))
             ).first()
-            
+
             if existing:
                 results['skipped_duplicates'].append({
                     'row': row_num,
@@ -145,9 +148,9 @@ def parse_discogs_csv(csv_content: bytes, is_wanted: bool = False) -> dict:
                     'format': physical_format or 'Unknown'
                 })
                 continue
-            
+
             notes = row.get('Notes', '').strip() or None
-            
+
             year_discogs_release = None
             year_str = row.get('Released', '').strip()
             if year_str:
@@ -155,12 +158,13 @@ def parse_discogs_csv(csv_content: bytes, is_wanted: bool = False) -> dict:
                     year_discogs_release = int(year_str[:4])
                 except ValueError:
                     pass
-            
+
             Album.create(
                 title=title,
                 artist=artist,
                 year=None,
                 year_discogs_release=year_discogs_release,
+                released=released,
                 physical_format=physical_format,
                 genres=[],
                 cover_image_path=None,
