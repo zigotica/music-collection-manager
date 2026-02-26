@@ -10,6 +10,7 @@ from app.services.lastfm import scrape_album
 from app.services.image_utils import resize_image
 from app.auth import require_admin
 from app.templates_globals import templates
+from app.utils.artists import apply_artist_mapping
 
 router = APIRouter()
 
@@ -98,6 +99,8 @@ async def create_album(
     cover: UploadFile = File(None),
     _: bool = Depends(require_admin)
 ):
+    artist = apply_artist_mapping(artist)
+    
     cover_path = None
     if cover and cover.filename:
         if allowed_file(cover.filename):
@@ -155,6 +158,8 @@ async def update_album(
         album = Album.get_by_id(album_id)
     except Album.DoesNotExist:
         raise HTTPException(status_code=404, detail="Album not found")
+    
+    artist = apply_artist_mapping(artist)
     
     if cover and cover.filename:
         if allowed_file(cover.filename):

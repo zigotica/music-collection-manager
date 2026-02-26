@@ -165,7 +165,7 @@ async def scrape_artist_profile(artist_name: str, _: bool = Depends(require_admi
 
 @router.get("/artist/{artist_name:path}", response_class=HTMLResponse)
 async def browse_artist(request: Request, artist_name: str, sort: str = "year", order: str = "asc", message: str = None):
-    query = Album.select().where(Album.artist == artist_name)
+    query = Album.select().where(Album.artist.contains(artist_name))
     
     if sort == "title":
         query = query.order_by(Album.title.asc() if order == "asc" else Album.title.desc())

@@ -1,6 +1,7 @@
 import csv
 import io
 from app.models import Album, ArtistMapping
+from app.utils.artists import split_artists, join_artists, apply_artist_mapping
 
 
 def detect_artist_mappings(csv_content: bytes) -> dict:
@@ -31,25 +32,31 @@ def detect_artist_mappings(csv_content: bytes) -> dict:
         existing = Album.select().where(Album.discogs_id == discogs_id).first()
         
         if existing and existing.artist != artist:
-            results['details'].append({
-                'row': row_num,
-                'csv_artist': artist,
-                'db_artist': existing.artist,
-                'discogs_id': discogs_id
-            })
-            results['mappings_found'] += 1
+            csv_artists = split_artists(artist)
+            db_artists = split_artists(existing.artist)
             
-            existing_mapping = ArtistMapping.select().where(
-                (ArtistMapping.original_name == artist) &
-                (ArtistMapping.new_name == existing.artist)
-            ).first()
-            
-            if not existing_mapping:
-                ArtistMapping.create(
-                    original_name=artist,
-                    new_name=existing.artist
-                )
-                results['mappings_created'] += 1
+            for csv_a in csv_artists:
+                for db_a in db_artists:
+                    if csv_a != db_a:
+                        results['details'].append({
+                            'row': row_num,
+                            'csv_artist': csv_a,
+                            'db_artist': db_a,
+                            'discogs_id': discogs_id
+                        })
+                        results['mappings_found'] += 1
+                        
+                        existing_mapping = ArtistMapping.select().where(
+                            (ArtistMapping.original_name == csv_a) &
+                            (ArtistMapping.new_name == db_a)
+                        ).first()
+                        
+                        if not existing_mapping:
+                            ArtistMapping.create(
+                                original_name=csv_a,
+                                new_name=db_a
+                            )
+                            results['mappings_created'] += 1
     
     return results
 
@@ -116,9 +123,7 @@ def parse_discogs_csv(csv_content: bytes, is_wanted: bool = False) -> dict:
                 })
                 continue
             
-            mapping = ArtistMapping.select().where(ArtistMapping.original_name == artist).first()
-            if mapping:
-                artist = mapping.new_name
+            artist = apply_artist_mapping(artist)
             
             discogs_id = row.get('release_id', '').strip() or row.get('Release Id', '').strip() or row.get('Release ID', '').strip() or None
             

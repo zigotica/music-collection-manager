@@ -10,6 +10,7 @@ from typing import Optional, List
 from app.config import LASTFM_API_KEY, USER_AGENT, COVERS_DIR, ARTISTS_DIR
 from app.services.image_utils import resize_image
 from app.models import Artist
+from app.utils.artists import split_artists, apply_artist_mapping
 
 logger = logging.getLogger(__name__)
 LASTFM_API_BASE = "https://ws.audioscrobbler.com/2.0/"
@@ -359,14 +360,12 @@ async def scrape_album(album) -> dict:
 
     if not needs_cover and not needs_year and not needs_genres:
         return result
-
-    artist_variants = [album.artist]
-    if ' / ' in album.artist:
-        artist_variants.append(album.artist.split(' / ')[0])
-    if ' & ' in album.artist:
-        artist_variants.append(album.artist.split(' & ')[0])
-    if ', ' in album.artist:
-        artist_variants.append(album.artist.split(', ')[0])
+    
+    artist_list = split_artists(album.artist)
+    artist_list = [apply_artist_mapping(a) for a in artist_list]
+    artist_variants = artist_list.copy()
+    for artist in artist_list:
+        artist_variants.append(artist)
 
     if needs_cover or needs_year:
         album_info = {}

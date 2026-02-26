@@ -18,7 +18,12 @@
         </div>
         <div class="album-detail-info">
             <h1>{{ album.title }}</h1>
-            <p class="artist"><a href="/artist/{{ album.artist }}">{{ album.artist }}</a></p>
+            <p class="artist">
+                {% set artists = album.artist.split(', ') %}
+                {% for a in artists %}
+                <a href="/artist/{{ a }}">{{ a }}</a>{% if not loop.last %} & {% endif %}
+                {% endfor %}
+            </p>
             
             <div class="detail-row">
                 <span class="label">Year:</span>

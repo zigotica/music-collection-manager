@@ -39,7 +39,8 @@
                     <div class="thumbnail no-cover-small">-</div>
                     {% endif %}
                 </td>
-                <td><a href="/artist/{{ album.artist }}">{{ album.artist }}</a></td>
+                {% set artists = album.artist.split(', ') %}
+                <td>{% for a in artists %}<a href="/artist/{{ a }}">{{ a }}</a>{% if not loop.last %} & {% endif %}{% endfor %}</td>
                 <td><a href="{{ album_url(album) }}">{{ album.title }}</a></td>
                 <td>{% if album.physical_format %}<a href="/format/{{ album.physical_format }}">{{ album.physical_format }}</a>{% else %}-{% endif %}</td>
                 <td>{% if album.year %}<a href="/year/{{ album.year }}">{{ album.year }}</a>{% else %}-{% endif %}</td>

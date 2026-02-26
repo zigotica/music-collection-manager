@@ -33,7 +33,7 @@
         </a>
         <div class="album-info">
             <h3><a href="{{ album_url(album) }}">{{ album.title }}</a></h3>
-            <p class="artist"><a href="/artist/{{ album.artist }}">{{ album.artist }}</a></p>
+            <p class="artist">{% set artists = album.artist.split(', ') %}{% for a in artists %}<a href="/artist/{{ a }}">{{ a }}</a>{% if not loop.last %} & {% endif %}{% endfor %}</p>
             <p class="meta">
                 {% if album.year %}<a href="/year/{{ album.year }}">{{ album.year }}</a>{% endif %}
                 {% if album.physical_format %}<span class="format"><a href="/format/{{ album.physical_format }}">{{ album.physical_format }}</a></span>{% endif %}
