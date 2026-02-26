@@ -24,6 +24,36 @@ class TestSplitArtists:
     def test_dash_separator(self):
         assert split_artists("John McLaughlin - Al Di Meola - Paco De Lucía") == ["John McLaughlin", "Al Di Meola", "Paco De Lucía"]
     
+    def test_comma_space_separator(self):
+        assert split_artists("Coleman Hawkins, Ben Webster") == ["Coleman Hawkins", "Ben Webster"]
+    
+    def test_comma_space_multiple_artists(self):
+        assert split_artists("John Lennon, Paul McCartney, George Harrison") == ["John Lennon", "Paul McCartney", "George Harrison"]
+    
+    def test_jr_suffix_single_artist(self):
+        assert split_artists("Grover Washington, Jr.") == ["Grover Washington Jr."]
+    
+    def test_sr_suffix_single_artist(self):
+        assert split_artists("Mickey Rooney, Sr.") == ["Mickey Rooney Sr."]
+    
+    def test_jr_suffix_lowercase(self):
+        assert split_artists("Artist, jr.") == ["Artist jr."]
+    
+    def test_jr_suffix_mixed_case(self):
+        assert split_artists("Artist, JR.") == ["Artist JR."]
+    
+    def test_jr_suffix_with_other_artists(self):
+        assert split_artists("John Lennon, Grover Washington, Jr.") == ["John Lennon", "Grover Washington Jr."]
+    
+    def test_jr_suffix_first_position(self):
+        assert split_artists("Grover Washington, Jr., John Lennon") == ["Grover Washington Jr.", "John Lennon"]
+    
+    def test_comma_then_featuring_split(self):
+        assert split_artists("Stan Getz / João Gilberto Featuring Antonio Carlos Jobim") == ["Stan Getz", "João Gilberto", "Antonio Carlos Jobim"]
+    
+    def test_comma_then_featuring_with_slash(self):
+        assert split_artists("Artist A, Artist B Featuring Artist C") == ["Artist A", "Artist B", "Artist C"]
+    
     def test_feat_period(self):
         assert split_artists("Artist feat. Another Artist") == ["Artist", "Another Artist"]
     

@@ -6,6 +6,7 @@ from app.models import Album, Artist
 from app.auth import require_admin
 from app.templates_globals import templates
 from app.config import COVERS_DIR, ARTISTS_DIR, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME
+from app.utils.artists import split_artists
 import os
 import io
 import zipfile
@@ -23,15 +24,21 @@ async def admin_page(request: Request, message: str = None, error: str = None, _
     import_results = _last_import_results
     _last_import_results = None
     
-    artist_names = list(Album.select(Album.artist).distinct())
-    total_artists = len(artist_names)
+    albums = Album.select().where(Album.is_wanted == False).dicts()
+    
+    artist_names_set = set()
+    for album in albums:
+        artists = split_artists(album['artist'])
+        for artist_name in artists:
+            artist_names_set.add(artist_name)
+    
+    total_artists = len(artist_names_set)
     
     artists_missing_image = 0
     artists_missing_bio = 0
     artists_missing_genres = 0
     
-    for name_tuple in artist_names:
-        artist_name = name_tuple.artist
+    for artist_name in artist_names_set:
         artist = Artist.select().where(Artist.name == artist_name).first()
         
         if not artist:
@@ -180,11 +187,16 @@ async def missing_data_page(request: Request, _: bool = Depends(require_admin)):
 
 @router.post("/admin/scrape-artists")
 async def bulk_scrape_artists(request: Request, _: bool = Depends(require_admin)):
-    artist_names = list(Album.select(Album.artist).distinct())
+    albums = Album.select().where(Album.is_wanted == False).dicts()
+    
+    artist_names_set = set()
+    for album in albums:
+        artists = split_artists(album['artist'])
+        for artist_name in artists:
+            artist_names_set.add(artist_name)
     
     artists_to_scrape = []
-    for name_tuple in artist_names:
-        artist_name = name_tuple.artist
+    for artist_name in artist_names_set:
         artist = Artist.select().where(Artist.name == artist_name).first()
         
         if not artist:
@@ -212,13 +224,19 @@ async def bulk_scrape_artists(request: Request, _: bool = Depends(require_admin)
 
 @router.get("/admin/missing-artists", response_class=HTMLResponse)
 async def missing_artists_page(request: Request, _: bool = Depends(require_admin)):
-    artist_names = list(Album.select(Album.artist).distinct())
+    albums = Album.select().where(Album.is_wanted == False).dicts()
+    
+    artist_albums = {}
+    for album in albums:
+        artists = split_artists(album['artist'])
+        for artist_name in artists:
+            if artist_name not in artist_albums:
+                artist_albums[artist_name] = set()
+            artist_albums[artist_name].add(album['id'])
     
     artists_with_missing = []
-    for name_tuple in artist_names:
-        artist_name = name_tuple.artist
+    for artist_name, album_ids in artist_albums.items():
         artist = Artist.select().where(Artist.name == artist_name).first()
-        album_count = Album.select().where(Album.artist == artist_name).count()
         
         missing = []
         if not artist:
@@ -235,7 +253,7 @@ async def missing_artists_page(request: Request, _: bool = Depends(require_admin
             artists_with_missing.append({
                 'name': artist_name,
                 'artist': artist,
-                'album_count': album_count,
+                'album_count': len(album_ids),
                 'missing': missing
             })
     

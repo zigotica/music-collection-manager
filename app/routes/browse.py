@@ -4,6 +4,7 @@ from peewee import fn
 from urllib.parse import quote
 import os
 from app.models import Album, Artist, ArtistMapping
+from app.utils.artists import split_artists
 from app.services.lastfm import scrape_artist, get_or_create_artist
 from app.services.image_utils import resize_image
 from app.config import ARTISTS_DIR
@@ -14,20 +15,19 @@ router = APIRouter()
 
 @router.get("/artists", response_class=HTMLResponse)
 async def browse_artists(request: Request, sort: str = "name", order: str = "asc"):
-    artists_data = Album.select(
-        Album.artist,
-        fn.COUNT(Album.id).alias('album_count')
-    ).where(
-        Album.is_wanted == False
-    ).group_by(
-        Album.artist
-    ).dicts()
+    albums = Album.select().where(Album.is_wanted == False).dicts()
+    
+    artist_counts = {}
+    for album in albums:
+        artists = split_artists(album['artist'])
+        for artist_name in artists:
+            if artist_name in artist_counts:
+                artist_counts[artist_name] += 1
+            else:
+                artist_counts[artist_name] = 1
     
     artists_list = []
-    for a in artists_data:
-        artist_name = a['artist']
-        album_count = a['album_count']
-        
+    for artist_name, album_count in artist_counts.items():
         artist = Artist.select().where(Artist.name == artist_name).first()
         
         artists_list.append({

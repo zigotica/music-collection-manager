@@ -1,5 +1,6 @@
 import re
 
+
 def split_artists(artist_string: str) -> list:
     if not artist_string:
         return []
@@ -31,10 +32,46 @@ def split_artists(artist_string: str) -> list:
         artists = [a.strip() for a in re.split(' ft ', artist_string, flags=re.IGNORECASE) if a.strip()]
     elif ' - ' in artist_string:
         artists = [a.strip() for a in artist_string.split(' - ') if a.strip()]
-    else:
-        artists = [artist_string]
     
-    return [a.strip() for a in artists if a.strip()]
+    if not artists:
+        if ', ' in artist_string:
+            artists = [a.strip() for a in artist_string.split(', ') if a.strip()]
+        else:
+            artists = [artist_string]
+    
+    final_artists = []
+    for artist in artists:
+        lower_artist = artist.lower()
+        if ' feat. ' in lower_artist:
+            sub_artists = [a.strip() for a in re.split(' feat\\. ', artist, flags=re.IGNORECASE) if a.strip()]
+            final_artists.extend(sub_artists)
+        elif ' feat ' in lower_artist:
+            sub_artists = [a.strip() for a in re.split(' feat ', artist, flags=re.IGNORECASE) if a.strip()]
+            final_artists.extend(sub_artists)
+        elif ' featuring ' in lower_artist:
+            sub_artists = [a.strip() for a in re.split(' featuring ', artist, flags=re.IGNORECASE) if a.strip()]
+            final_artists.extend(sub_artists)
+        elif ' ft. ' in lower_artist:
+            sub_artists = [a.strip() for a in re.split(' ft\\. ', artist, flags=re.IGNORECASE) if a.strip()]
+            final_artists.extend(sub_artists)
+        elif ' ft ' in lower_artist:
+            sub_artists = [a.strip() for a in re.split(' ft ', artist, flags=re.IGNORECASE) if a.strip()]
+            final_artists.extend(sub_artists)
+        else:
+            final_artists.append(artist)
+    
+    merged_artists = []
+    i = 0
+    while i < len(final_artists):
+        current = final_artists[i]
+        if i > 0 and re.search(r'^,? ?(jr\.?|sr\.?)$', current, re.IGNORECASE):
+            merged = merged_artists[-1] + ' ' + current.replace(',', '').strip()
+            merged_artists[-1] = merged.strip()
+        else:
+            merged_artists.append(current)
+        i += 1
+    
+    return [a.strip() for a in merged_artists if a.strip()]
 
 
 def join_artists(artists: list) -> str:
