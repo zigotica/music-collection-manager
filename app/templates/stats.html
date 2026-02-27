@@ -16,6 +16,11 @@
         </div>
     </div>
     
+    <div class="chart-section">
+        <h2>Genres</h2>
+        <div class="genre-cloud" id="genreCloud"></div>
+    </div>
+    
     <div class="charts-row">
         <div class="chart-section half">
             <h2>Items by Format</h2>
@@ -46,6 +51,7 @@ async function loadStats() {
     renderDecadeChart(data.decades);
     renderFormatChart(data.formats);
     renderArtistChart(data.top_artists);
+    renderGenreCloud(data.genres);
 }
 
 function renderDecadeChart(decades) {
@@ -166,6 +172,40 @@ function renderArtistChart(artists) {
             }
         }
     });
+}
+
+function renderGenreCloud(genres) {
+    const container = document.getElementById('genreCloud');
+    
+    if (genres.length === 0) {
+        container.innerHTML = '<p class="no-data">No genres available</p>';
+        return;
+    }
+    
+    const maxCount = genres[0][1];
+    const minCount = genres[genres.length - 1][1];
+    const minSize = 12;
+    const maxSize = 36;
+    
+    const colors = [
+        'rgba(0, 102, 204, 0.8)',
+        'rgba(40, 167, 69, 0.8)',
+        'rgba(255, 193, 7, 0.8)',
+        'rgba(220, 53, 69, 0.8)',
+        'rgba(111, 66, 193, 0.8)',
+        'rgba(23, 162, 184, 0.8)',
+        'rgba(102, 16, 242, 0.8)',
+        'rgba(253, 126, 20, 0.8)'
+    ];
+    
+    container.innerHTML = genres.map((genre, index) => {
+        const count = genre[1];
+        const size = minCount === maxCount ? minSize : minSize + ((count - minCount) / (maxCount - minCount)) * (maxSize - minSize);
+        const color = colors[index % colors.length];
+        const opacity = 0.6 + ((count - minCount) / (maxCount - minCount)) * 0.4;
+        
+        return `<a href="/genre/${encodeURIComponent(genre[0])}" class="genre-tag" style="font-size: ${size}px; color: ${color}; opacity: ${opacity}">${genre[0]} (${count})</a>`;
+    }).join(' ');
 }
 
 loadStats();

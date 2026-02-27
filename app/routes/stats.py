@@ -28,10 +28,19 @@ def get_stats_data():
     artist_counts = Counter(a.artist for a in albums)
     top_artists = artist_counts.most_common(20)
     
+    genre_counts = Counter()
+    for album in albums:
+        if album.genres:
+            for genre in album.genres:
+                normalized = genre.lower().strip()
+                genre_counts[normalized] += 1
+    genres = sorted(genre_counts.items(), key=lambda x: -x[1])
+    
     return {
         "decades": decades,
         "formats": formats,
         "top_artists": top_artists,
+        "genres": genres,
         "total": len(albums)
     }
 

@@ -265,7 +265,9 @@ async def browse_format(request: Request, format_name: str, sort: str = "artist"
 
 @router.get("/genre/{tag}", response_class=HTMLResponse)
 async def browse_genre(request: Request, tag: str, sort: str = "artist", order: str = "asc"):
-    albums = list(Album.select().where((Album.genres.contains(tag)) & (Album.is_wanted == False)))
+    all_albums = list(Album.select().where(Album.is_wanted == False))
+    tag_lower = tag.lower()
+    albums = [a for a in all_albums if a.genres and any(tag_lower == g.lower() for g in a.genres)]
     
     if sort == "title":
         albums.sort(key=lambda a: a.title, reverse=(order == "desc"))
