@@ -58,6 +58,7 @@
 <div class="album-grid">
     {% for album in albums %}
     <div class="album-card">
+        {% if album.is_wanted %}<span class="wishlist-badge">wishlist</span>{% endif %}
         <a href="{{ album_url(album) }}" class="album-cover">
             {% if album.cover_image_path %}
             <img src="{{ COVERS_URL }}{{ album.cover_image_path }}" alt="{{ album.title }}">
