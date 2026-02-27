@@ -3,6 +3,8 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from app.models import Album
 from app.templates_globals import templates
+from app.utils.artists import split_artists
+from app.services.import_csv import is_compilation_artist
 
 router = APIRouter()
 
@@ -25,7 +27,11 @@ def get_stats_data():
     format_counts = Counter(a.physical_format or "Unknown" for a in albums)
     formats = sorted(format_counts.items(), key=lambda x: -x[1])
     
-    artist_counts = Counter(a.artist for a in albums)
+    artist_counts = Counter()
+    for album in albums:
+        for artist_name in split_artists(album.artist):
+            if not is_compilation_artist(artist_name):
+                artist_counts[artist_name] += 1
     top_artists = artist_counts.most_common(20)
     
     genre_counts = Counter()

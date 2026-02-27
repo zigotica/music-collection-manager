@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Form, UploadFile, File, Depends
+from fastapi import APIRouter, Request, Form, UploadFile, File, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from peewee import fn
 from urllib.parse import quote
@@ -163,23 +163,33 @@ async def scrape_artist_profile(artist_name: str, _: bool = Depends(require_admi
         status_code=303
     )
 
+def artist_has_albums(artist_name: str) -> bool:
+    all_albums = Album.select()
+    for album in all_albums:
+        album_artists = [a.strip() for a in album.artist.split(',')]
+        if artist_name in album_artists:
+            return True
+    return False
+
+
 @router.get("/artist/{artist_name:path}", response_class=HTMLResponse)
 async def browse_artist(request: Request, artist_name: str, sort: str = "year", order: str = "asc", message: str = None):
-    query = Album.select().where(Album.artist.contains(artist_name))
-    
-    if sort == "title":
-        query = query.order_by(Album.title.asc() if order == "asc" else Album.title.desc())
-    else:
-        query = query.order_by(Album.year.asc() if order == "asc" else Album.year.desc())
-    
-    albums = list(query)
-    
     artist = Artist.select().where(Artist.name == artist_name).first()
     
     if not artist:
+        if not artist_has_albums(artist_name):
+            raise HTTPException(status_code=404, detail="Artist not found")
         result = await scrape_artist(artist_name)
         if result["created"]:
             artist = Artist.select().where(Artist.name == artist_name).first()
+    
+    all_albums = Album.select()
+    albums = [a for a in all_albums if artist_name in [x.strip() for x in a.artist.split(',')]]
+    
+    if sort == "title":
+        albums.sort(key=lambda a: (a.title or "") if order == "asc" else "", reverse=order == "desc")
+    else:
+        albums.sort(key=lambda a: (a.year or 0) if order == "asc" else 0, reverse=order == "desc")
     
     return templates.TemplateResponse("browse_artist.html", {
         "request": request,
