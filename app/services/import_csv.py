@@ -1,7 +1,18 @@
 import csv
 import io
+import re
 from app.models import Album, ArtistMapping
 from app.utils.artists import split_artists, join_artists, apply_artist_mapping
+
+
+COMPILATION_ARTISTS = {'various', 'v.a.', 'v a', 'va', 'various artists', 'unknown'}
+
+
+def is_compilation_artist(artist: str) -> bool:
+    if not artist:
+        return False
+    normalized = re.sub(r'[^a-z0-9]', '', artist.lower())
+    return normalized in COMPILATION_ARTISTS
 
 
 def detect_artist_mappings(csv_content: bytes) -> dict:
@@ -37,6 +48,9 @@ def detect_artist_mappings(csv_content: bytes) -> dict:
             for csv_a in csv_artists:
                 db_artist = existing.artist
                 if csv_a != db_artist:
+                    if is_compilation_artist(csv_a) or is_compilation_artist(db_artist):
+                        continue
+                    
                     results['details'].append({
                         'row': row_num,
                         'csv_artist': csv_a,
