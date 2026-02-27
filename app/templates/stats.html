@@ -24,7 +24,7 @@
     <div class="charts-row">
         <div class="chart-section half">
             <h2>Items by Format</h2>
-            <div class="chart-wrapper">
+            <div class="chart-wrapper pie">
                 <canvas id="formatChart"></canvas>
             </div>
         </div>
@@ -119,10 +119,11 @@ function renderFormatChart(formats) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: true,
             plugins: {
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    fullSize: true,
                 }
             },
             onClick: (event, elements) => {

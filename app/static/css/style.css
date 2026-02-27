@@ -800,6 +800,11 @@ a:hover {
     height: 500px;
 }
 
+.chart-wrapper.pie {
+  width: 100%;
+  height: auto;
+}
+
 .charts-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
