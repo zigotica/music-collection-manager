@@ -53,9 +53,16 @@
             <input type="file" id="cover" name="cover" accept="image/*">
         </div>
         
-        <div class="form-group checkbox">
-            <input type="checkbox" id="is_wanted" name="is_wanted" {% if album and album.is_wanted %}checked{% endif %}>
-            <label for="is_wanted">Add to Wishlist (not in collection)</label>
+        <div class="form-group">
+            <label>Type</label>
+            <div class="switch-row">
+                <span class="switch-option">In collection</span>
+                <label class="switch">
+                    <input type="checkbox" id="is_wanted" name="is_wanted" value="true" {% if album and album.is_wanted %}checked{% endif %}>
+                    <span class="slider"></span>
+                </label>
+                <span class="switch-option">In wishlist</span>
+            </div>
         </div>
         
         <div class="form-actions">

@@ -95,10 +95,12 @@ async def create_album(
     physical_format: str = Form(None),
     genres: str = Form(""),
     notes: str = Form(None),
-    is_wanted: bool = Form(False),
+    is_wanted: str = Form("false"),
     cover: UploadFile = File(None),
     _: bool = Depends(require_admin)
 ):
+    is_wanted = is_wanted == "true"
+    
     artist = apply_artist_mapping(artist)
     
     cover_path = None
@@ -150,10 +152,12 @@ async def update_album(
     physical_format: str = Form(None),
     genres: str = Form(""),
     notes: str = Form(None),
-    is_wanted: bool = Form(False),
+    is_wanted: str = Form("false"),
     cover: UploadFile = File(None),
     _: bool = Depends(require_admin)
 ):
+    is_wanted = is_wanted == "true"
+    
     try:
         album = Album.get_by_id(album_id)
     except Album.DoesNotExist:
