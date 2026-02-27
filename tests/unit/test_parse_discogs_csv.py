@@ -167,3 +167,45 @@ Tool,Fear Inoculum,CD,2023,456"""
         
         call_kwargs = mock_album_create.call_args[1]
         assert call_kwargs['notes'] is None
+    
+    def test_import_compilation_various_artist(self, mocker):
+        mocker.patch('app.services.import_csv.detect_artist_mappings')
+        mock_album_select = mocker.patch('app.services.import_csv.Album.select')
+        mock_album_select.return_value.where.return_value.first.return_value = None
+        mock_album_create = mocker.patch('app.services.import_csv.Album.create')
+        
+        csv_content = b"Artist,Title,Format,Released,release_id\nVarious,Greatest Hits,CD,2023,123"
+        
+        result = parse_discogs_csv(csv_content)
+        
+        assert result['imported'] == 1
+        call_kwargs = mock_album_create.call_args[1]
+        assert call_kwargs['is_compilation'] == True
+        assert call_kwargs['artist'] == 'Various'
+    
+    def test_import_compilation_va(self, mocker):
+        mocker.patch('app.services.import_csv.detect_artist_mappings')
+        mock_album_select = mocker.patch('app.services.import_csv.Album.select')
+        mock_album_select.return_value.where.return_value.first.return_value = None
+        mock_album_create = mocker.patch('app.services.import_csv.Album.create')
+        
+        csv_content = b"Artist,Title,Format,Released,release_id\nV.A.,Movie Soundtrack,CD,2023,456"
+        
+        result = parse_discogs_csv(csv_content)
+        
+        assert result['imported'] == 1
+        call_kwargs = mock_album_create.call_args[1]
+        assert call_kwargs['is_compilation'] == True
+    
+    def test_import_regular_artist_not_compilation(self, mocker):
+        mocker.patch('app.services.import_csv.detect_artist_mappings')
+        mock_album_select = mocker.patch('app.services.import_csv.Album.select')
+        mock_album_select.return_value.where.return_value.first.return_value = None
+        mock_album_create = mocker.patch('app.services.import_csv.Album.create')
+        
+        csv_content = b"Artist,Title,Format,Released,release_id\nTool,Undertow,CD,2023,123"
+        
+        result = parse_discogs_csv(csv_content)
+        
+        call_kwargs = mock_album_create.call_args[1]
+        assert call_kwargs['is_compilation'] == False

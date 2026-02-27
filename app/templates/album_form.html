@@ -65,6 +65,14 @@
             </div>
         </div>
         
+        <div class="form-group">
+            <label>Compilation</label>
+            <div class="checkbox-row">
+                <input type="checkbox" id="is_compilation" name="is_compilation" value="true" {% if album and album.is_compilation %}checked{% endif %}>
+                <label for="is_compilation">This is a compilation (various artists, soundtrack, etc.)</label>
+            </div>
+        </div>
+        
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">{% if is_edit %}Save Changes{% else %}Add Album{% endif %}</button>
             <a href="{% if album %}{{ album_url(album) }}{% else %}/{% endif %}" class="btn">Cancel</a>

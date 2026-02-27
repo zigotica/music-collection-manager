@@ -26,8 +26,13 @@ def album_url(album):
 templates.env.globals["album_url"] = album_url
 
 @router.get("/", response_class=HTMLResponse)
-async def home(request: Request, search: str = "", sort: str = "title", order: str = "asc"):
+async def home(request: Request, search: str = "", sort: str = "title", order: str = "asc", compilation: str = ""):
     query = Album.select().where(Album.is_wanted == False)
+    
+    if compilation == "true":
+        query = query.where(Album.is_compilation == True)
+    elif compilation == "false":
+        query = query.where(Album.is_compilation == False)
     
     if search:
         query = query.where(
@@ -49,12 +54,18 @@ async def home(request: Request, search: str = "", sort: str = "title", order: s
         "albums": albums,
         "search": search,
         "sort": sort,
-        "order": order
+        "order": order,
+        "compilation": compilation
     })
 
 @router.get("/wanted", response_class=HTMLResponse)
-async def wanted(request: Request, search: str = "", sort: str = "title", order: str = "asc"):
+async def wanted(request: Request, search: str = "", sort: str = "title", order: str = "asc", compilation: str = ""):
     query = Album.select().where(Album.is_wanted == True)
+    
+    if compilation == "true":
+        query = query.where(Album.is_compilation == True)
+    elif compilation == "false":
+        query = query.where(Album.is_compilation == False)
     
     if search:
         query = query.where(
@@ -76,7 +87,8 @@ async def wanted(request: Request, search: str = "", sort: str = "title", order:
         "albums": albums,
         "search": search,
         "sort": sort,
-        "order": order
+        "order": order,
+        "compilation": compilation
     })
 
 @router.get("/albums/new", response_class=HTMLResponse)
@@ -96,10 +108,12 @@ async def create_album(
     genres: str = Form(""),
     notes: str = Form(None),
     is_wanted: str = Form("false"),
+    is_compilation: str = Form("false"),
     cover: UploadFile = File(None),
     _: bool = Depends(require_admin)
 ):
     is_wanted = is_wanted == "true"
+    is_compilation = is_compilation == "true"
     
     artist = apply_artist_mapping(artist)
     
@@ -125,6 +139,7 @@ async def create_album(
         genres=genre_list,
         cover_image_path=cover_path,
         is_wanted=is_wanted,
+        is_compilation=is_compilation,
         notes=notes
     )
     
@@ -153,10 +168,12 @@ async def update_album(
     genres: str = Form(""),
     notes: str = Form(None),
     is_wanted: str = Form("false"),
+    is_compilation: str = Form("false"),
     cover: UploadFile = File(None),
     _: bool = Depends(require_admin)
 ):
     is_wanted = is_wanted == "true"
+    is_compilation = is_compilation == "true"
     
     try:
         album = Album.get_by_id(album_id)
@@ -184,6 +201,7 @@ async def update_album(
     album.physical_format = physical_format
     album.genres = genre_list
     album.is_wanted = is_wanted
+    album.is_compilation = is_compilation
     album.notes = notes
     album.save()
     

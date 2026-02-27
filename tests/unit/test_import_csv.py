@@ -2,7 +2,7 @@ import pytest
 import sys
 sys.path.insert(0, '/Users/hanzonian/Documents/personal/music-library')
 
-from app.services.import_csv import map_format
+from app.services.import_csv import map_format, is_compilation_artist
 
 
 class TestMapFormat:
@@ -59,3 +59,50 @@ class TestMapFormat:
     
     def test_3xlp_boxset(self):
         assert map_format("3xLP, Box Set") == "Vinyl"
+
+
+class TestIsCompilationArtist:
+    def test_various(self):
+        assert is_compilation_artist("Various") == True
+    
+    def test_various_uppercase(self):
+        assert is_compilation_artist("VARIOUS") == True
+    
+    def test_various_mixed_case(self):
+        assert is_compilation_artist("Various") == True
+    
+    def test_v_a(self):
+        assert is_compilation_artist("V.A.") == True
+    
+    def test_v_a_spaces(self):
+        assert is_compilation_artist("V A") == True
+    
+    def test_va(self):
+        assert is_compilation_artist("VA") == True
+    
+    def test_various_artists(self):
+        assert is_compilation_artist("Various Artists") == True
+    
+    def test_unknown(self):
+        assert is_compilation_artist("Unknown") == True
+    
+    def test_regular_artist(self):
+        assert is_compilation_artist("Tool") == False
+    
+    def test_regular_artist_uppercase(self):
+        assert is_compilation_artist("RADIOHEAD") == False
+    
+    def test_empty_string(self):
+        assert is_compilation_artist("") == False
+    
+    def test_none_input(self):
+        assert is_compilation_artist(None) == False
+    
+    def test_special_characters(self):
+        assert is_compilation_artist("(Various Artists)") == True
+    
+    def test_soundtrack(self):
+        assert is_compilation_artist("Soundtrack") == False
+    
+    def test_movie_soundtrack(self):
+        assert is_compilation_artist("Movie Soundtrack") == False

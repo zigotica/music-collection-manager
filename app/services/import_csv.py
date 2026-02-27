@@ -5,7 +5,7 @@ from app.models import Album, ArtistMapping
 from app.utils.artists import split_artists, join_artists, apply_artist_mapping
 
 
-COMPILATION_ARTISTS = {'various', 'v.a.', 'v a', 'va', 'various artists', 'unknown'}
+COMPILATION_ARTISTS = {'various', 'v.a.', 'v a', 'va', 'variousartists', 'unknown'}
 
 
 def is_compilation_artist(artist: str) -> bool:
@@ -138,6 +138,8 @@ def parse_discogs_csv(csv_content: bytes, is_wanted: bool = False) -> dict:
             
             artist = apply_artist_mapping(artist)
             
+            is_compilation = is_compilation_artist(artist)
+            
             discogs_id = row.get('release_id', '').strip() or row.get('Release Id', '').strip() or row.get('Release ID', '').strip() or None
             
             discogs_format = row.get('Format', '').strip()
@@ -184,6 +186,7 @@ def parse_discogs_csv(csv_content: bytes, is_wanted: bool = False) -> dict:
                 cover_image_path=None,
                 discogs_id=discogs_id,
                 is_wanted=is_wanted,
+                is_compilation=is_compilation,
                 notes=notes
             )
             results['imported'] += 1

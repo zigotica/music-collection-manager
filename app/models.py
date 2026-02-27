@@ -35,6 +35,7 @@ class Album(Model):
     cover_image_path = CharField(null=True)
     discogs_id = CharField(null=True)
     is_wanted = BooleanField(default=False)
+    is_compilation = BooleanField(default=False)
     notes = TextField(null=True)
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)

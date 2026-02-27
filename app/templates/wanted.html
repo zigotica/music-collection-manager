@@ -13,17 +13,24 @@
         <input type="text" name="search" value="{{ search }}" placeholder="Search by title or artist...">
         <button type="submit">Search</button>
         {% if search %}
-        <a href="/wanted?sort={{ sort }}&order={{ order }}" class="btn">Clear</a>
+        <a href="/wanted?sort={{ sort }}&order={{ order }}&compilation={{ compilation }}" class="btn">Clear</a>
         {% endif %}
     </form>
     
+    <div class="filter-controls">
+        <span>Filter:</span>
+        <a href="/wanted?search={{ search }}&sort={{ sort }}&order={{ order }}&compilation=" class="{% if not compilation %}active{% endif %}">All</a>
+        <a href="/wanted?search={{ search }}&sort={{ sort }}&order={{ order }}&compilation=false" class="{% if compilation == 'false' %}active{% endif %}">Albums</a>
+        <a href="/wanted?search={{ search }}&sort={{ sort }}&order={{ order }}&compilation=true" class="{% if compilation == 'true' %}active{% endif %}">Compilations</a>
+    </div>
+    
     <div class="sort-controls">
         <span>Sort by:</span>
-        <a href="/wanted?search={{ search }}&sort=title&order={% if sort == 'title' and order == 'asc' %}desc{% else %}asc{% endif %}" 
+        <a href="/wanted?search={{ search }}&sort=title&order={% if sort == 'title' and order == 'asc' %}desc{% else %}asc{% endif %}&compilation={{ compilation }}" 
            class="{% if sort == 'title' %}active{% endif %}">Title {% if sort == 'title' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}</a>
-        <a href="/wanted?search={{ search }}&sort=artist&order={% if sort == 'artist' and order == 'asc' %}desc{% else %}asc{% endif %}" 
+        <a href="/wanted?search={{ search }}&sort=artist&order={% if sort == 'artist' and order == 'asc' %}desc{% else %}asc{% endif %}&compilation={{ compilation }}" 
            class="{% if sort == 'artist' %}active{% endif %}">Artist {% if sort == 'artist' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}</a>
-        <a href="/wanted?search={{ search }}&sort=year&order={% if sort == 'year' and order == 'asc' %}desc{% else %}asc{% endif %}" 
+        <a href="/wanted?search={{ search }}&sort=year&order={% if sort == 'year' and order == 'asc' %}desc{% else %}asc{% endif %}&compilation={{ compilation }}" 
            class="{% if sort == 'year' %}active{% endif %}">Year {% if sort == 'year' %}{{ '↑' if order == 'asc' else '↓' }}{% endif %}</a>
     </div>
 </div>
@@ -32,6 +39,7 @@
 <div class="album-grid">
     {% for album in albums %}
     <div class="album-card">
+        {% if album.is_compilation %}<span class="compilation-badge">vv.aa.</span>{% endif %}
         <a href="{{ album_url(album) }}" class="album-cover">
             {% if album.cover_image_path %}
             <img src="{{ COVERS_URL }}{{ album.cover_image_path }}" alt="{{ album.title }}">
