@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, UploadFile, File, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
-from app.services.import_csv import parse_discogs_csv, get_import_stats, update_discogs_years
+from app.services.import_csv import parse_discogs_csv, get_import_stats, update_discogs_years, is_compilation_artist
 from app.services.lastfm import scrape_album, scrape_artist as scrape_artist_profile
 from app.models import Album, Artist
 from app.auth import require_admin
@@ -139,7 +139,8 @@ async def bulk_scrape(request: Request, _: bool = Depends(require_admin)):
     
     albums_to_scrape = [
         a for a in all_albums 
-        if not a.cover_image_path or not a.year or not a.genres or a.genres == [] or a.genres == '[]'
+        if not any(is_compilation_artist(artist) for artist in split_artists(a.artist))
+        and (not a.cover_image_path or not a.year or not a.genres or a.genres == [] or a.genres == '[]')
     ]
     
     if not albums_to_scrape:
@@ -193,10 +194,13 @@ async def bulk_scrape_artists(request: Request, _: bool = Depends(require_admin)
     for album in albums:
         artists = split_artists(album['artist'])
         for artist_name in artists:
-            artist_names_set.add(artist_name)
+            if not is_compilation_artist(artist_name):
+                artist_names_set.add(artist_name)
     
     artists_to_scrape = []
     for artist_name in artist_names_set:
+        if is_compilation_artist(artist_name):
+            continue
         artist = Artist.select().where(Artist.name == artist_name).first()
         
         if not artist:
